@@ -1,1 +1,11 @@
-
+Neural Network
+Neuron
+Activation
+Hidden Layer
+Paramater
+Weight
+Weighted Sum
+Sigmoid Function
+Bias
+Vector
+Matrix
