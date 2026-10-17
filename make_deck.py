@@ -1,7 +1,12 @@
 """Turn a YouTube lecture into an Anki deck.
 
 Usage:
-    python make_deck.py https://youtu.be/aircAruvnKk
+    python make_deck.py https://youtu.be/aircAruvnKk          # full run: vocab + concept cards
+    python make_deck.py https://youtu.be/aircAruvnKk --terms  # vocab list only
+
+Run 1 (--terms) just lists the technical vocab, so you can check it against
+golden/<video_id>/jargon.txt with evals/eval_terms.py.
+Run 2 (no flag) goes on to the key ideas and writes conceptual cards.
 
 Everything is saved to outputs/<video_id>/.
 """
@@ -23,19 +28,28 @@ def save_json(path: Path, data) -> None:
     print(f"  saved {path}")
 
 
-def main(url: str) -> None:
+def main(url: str, terms_only: bool = False) -> None:
     video_id = transcript.get_video_id(url)
     out_dir = Path("outputs") / video_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
     print("1/4 Fetching transcript...")
-    segments = transcript.fetch_transcript(video_id)
-    save_json(out_dir / "transcript.json", segments)
+    transcript_path = out_dir / "transcript.json"
+    if transcript_path.exists():
+        # Reuse the saved copy: it doesn't change, and YouTube may block repeat fetches.
+        segments = json.loads(transcript_path.read_text())
+        print(f"  reused {transcript_path}")
+    else:
+        segments = transcript.fetch_transcript(video_id)
+        save_json(transcript_path, segments)
     transcript_text = transcript.format_for_prompt(segments)
 
     print("2/4 Extracting technical terms...")
     terms = llm.extract_terms(transcript_text)
     save_json(out_dir / "terms.json", [t.model_dump() for t in terms])
+    if terms_only:
+        print(f"Done: {len(terms)} terms. Score them with: python evals/eval_terms.py {video_id}")
+        return
 
     print("3/4 Picking the key ideas...")
     ideas = llm.pick_ideas(transcript_text, terms)
@@ -57,7 +71,10 @@ def main(url: str) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    args = sys.argv[1:]
+    terms_only = "--terms" in args
+    urls = [a for a in args if a != "--terms"]
+    if len(urls) != 1:
         print(__doc__)
         sys.exit(1)
-    main(sys.argv[1])
+    main(urls[0], terms_only)
