@@ -9,6 +9,8 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env             # then paste your API key into .env
 ```
+For cloud sessions, set `ANKI_BOT_API_KEY` in the environment settings instead (Claude Code reserves `ANTHROPIC_API_KEY` there).
+
 Get an API key at https://console.anthropic.com → API Keys. `.env` is git-ignored, so the key never gets committed.
 
 ## Run

@@ -6,6 +6,7 @@ makes Claude return exactly that shape, so we never have to scrape JSON
 out of free text.
 """
 
+import os
 from typing import Literal
 
 import anthropic
@@ -16,7 +17,12 @@ from ankibot import prompts
 # One place to change the model for every call.
 MODEL = "claude-opus-5-5"
 
-client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from the environment
+# The key comes from ANKI_BOT_API_KEY if set, otherwise ANTHROPIC_API_KEY.
+# The separate name is for cloud sessions, where ANTHROPIC_API_KEY is reserved
+# for Claude Code's own login.
+client = anthropic.Anthropic(
+    api_key=os.environ.get("ANKI_BOT_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
+)
 
 
 # ---- The shapes we ask Claude to return ----
