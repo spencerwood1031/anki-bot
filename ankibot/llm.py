@@ -1,4 +1,4 @@
-"""Step 2: the three Claude calls (terms, ideas, cards).
+"""Step 2: the Claude calls (terms, ideas, cards, plus the eval's term matching).
 
 Each function sends one prompt and gets back structured data. We describe
 the shape we want with small Pydantic classes, and `client.messages.parse`
@@ -57,6 +57,15 @@ class CardList(BaseModel):
     cards: list[Card]
 
 
+class TermMatch(BaseModel):
+    golden_term: str
+    tool_term: str | None  # None when the tool missed this golden term
+
+
+class MatchList(BaseModel):
+    matches: list[TermMatch]
+
+
 # ---- The three calls ----
 
 def _ask(system: str, user: str, output_shape: type[BaseModel]) -> BaseModel:
@@ -98,3 +107,15 @@ def draft_cards(transcript_text: str, ideas: list[Idea], terms: list[Term]) -> l
         CardList,
     )
     return result.cards
+
+
+# ---- Eval call ----
+
+def match_terms(golden_terms: list[str], tool_terms: list[str]) -> list[TermMatch]:
+    """For each golden term, ask Claude which tool term (if any) means the same thing."""
+    result = _ask(
+        prompts.MATCH_SYSTEM,
+        prompts.match_user(golden_terms, tool_terms),
+        MatchList,
+    )
+    return result.matches
