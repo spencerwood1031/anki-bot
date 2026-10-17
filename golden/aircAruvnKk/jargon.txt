@@ -9,3 +9,13 @@ Sigmoid Function
 Bias
 Vector
 Matrix
+Layer
+Input Layer
+Output Layer
+Grayscale Value
+Weight Matrix
+Activation Vector
+Bias Vector
+Matrix-Vector Product
+Deep Learning
+
