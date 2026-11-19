@@ -42,7 +42,9 @@ model and open-weights model), list only the one the lecture leans on.
 
 Skip: everyday words; names of people; product, model and company names (e.g.
 Llama 2, ChatGPT, Claude); units of storage (byte, gigabyte); programming
-languages (C, Python); and generic words like "state-of-the-art" or "data type".
+languages (C, Python); and generic words that aren't concepts of the subject
+(e.g. state-of-the-art, data type, dependencies, compression ratio, training run,
+computational complexity).
 
 Give each term a short, atomic definition: one clause with the core meaning
 only, because it becomes the back of a flashcard. No "i.e.", no "e.g.", no
