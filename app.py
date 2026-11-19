@@ -8,7 +8,7 @@ Visitors' API keys never reach this server. The page (templates/index.html)
 keeps the key in the browser and calls Claude directly. This server only does
 the parts that don't need the key:
 - GET  /                     the web page.
-- POST /api/transcript       {url, transcript?} -> {video_id, title, transcript_text}
+- POST /api/transcript       {url, transcript?} -> {video_id, title, transcript_text, has_timestamps}
 - POST /api/claude-request   {step, ...} -> the request body for one Claude call
                              (terms, ideas, cards or suggest), built from the same
                              prompts as make_deck.py. The browser sends it to Claude.
@@ -84,7 +84,12 @@ def get_transcript():
     transcript_text = transcript.format_for_prompt(segments)
     if len(transcript_text) > MAX_TRANSCRIPT_CHARS:
         return jsonify(error="That video is too long. Try one under about 3 hours."), 400
-    return jsonify(video_id=video_id, title=video_title(video_id), transcript_text=transcript_text)
+    return jsonify(
+        video_id=video_id,
+        title=video_title(video_id),
+        transcript_text=transcript_text,
+        has_timestamps=transcript.has_timestamps(segments),
+    )
 
 
 @app.post("/api/claude-request")

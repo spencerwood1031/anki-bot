@@ -166,6 +166,7 @@
       <span id="card-count" class="hint"></span>
     </div>
     <p class="hint">Edit any card, delete the ones you don't want, or add your own. "Suggest a better version" asks Claude to rewrite a card to follow good flashcard rules.</p>
+    <p id="no-times" class="hint" hidden>The pasted transcript had no timestamps, so the cards can't link to the right moment in the video. Paste it with its timestamps for working links, or type a time on any card.</p>
     <div id="card-list"></div>
 
     <div class="card new-card">
@@ -197,7 +198,7 @@
   // Everything the page knows lives in `deck`. The server keeps
   // nothing, so the cards exist only here until you download them.
   // ---------------------------------------------------------------
-  const deck = { videoId: "", title: "", cards: [] };
+  const deck = { videoId: "", title: "", cards: [], hasTimestamps: true };
 
   // The visitor's API key. It stays in this variable (in memory, never in
   // browser storage) and is only ever sent to api.anthropic.com, never to
@@ -329,6 +330,7 @@
 
       deck.videoId = lecture.video_id;
       deck.title = lecture.title;
+      deck.hasTimestamps = lecture.has_timestamps;
       deck.cards = cards;
       $("status").hidden = true;
       showReview();
@@ -347,6 +349,7 @@
     $("review-view").hidden = false;
     document.querySelector("main").classList.add("wide");
     $("deck-title").textContent = deck.title;
+    $("no-times").hidden = deck.hasTimestamps;
     renderCards();
     window.scrollTo(0, 0);
   }
@@ -385,7 +388,8 @@
 
     return el("div", { className: "card" },
       el("div", { className: "card-top" },
-        el("span", { textContent: `#${index + 1}` }), typeSelect, time, watch,
+        el("span", { textContent: `#${index + 1}` }), typeSelect, time,
+        card.start_seconds > 0 || deck.hasTimestamps ? watch : "",
         el("span", { className: "spacer" }), suggestButton, deleteButton),
       front, back,
       card.error ? el("p", { className: "hint", textContent: card.error }) : "",
