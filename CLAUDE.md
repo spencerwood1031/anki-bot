@@ -44,3 +44,21 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 - Bad definition: "Neural network trained on huge amounts of text to generate text; in essence a parameters file plus code that runs it." Good: "A neural network trained on huge amounts of text to generate text."
 - Bad definition: "The structure of a neural network, i.e. how its computations are arranged." Good: "The structure of a neural network."
 - Bad definition: "Small program (e.g. in C) that runs the neural network using the parameters." Good: "Small program that runs the neural network using the parameters."
+
+### A good main-idea set (Spencer's cards for the first part of Karpathy's "Intro to LLMs")
+Copy this style, not the content.
+- "LLMs: The two files that make up an LLM are {{c1::a parameters file}} and {{c2::a run file}}."
+- "LLMs: What can you do with an open-weights model that you can't with ChatGPT?" → "Download it and fine-tune it yourself."
+- "LLMs: Where does a model's "magic" lie, given its simple code?" → "In the parameter values."
+- "LLMs: Why does training cost far more than running a model?" → "Training has to find the parameters; running uses the already-set parameters."
+- "LLMs: How can we picture model training?" → "Compressing a chunk of the internet."
+- "LLMs: What do we use to compress a chunk of the internet?" → "A GPU cluster."
+- "LLMs: What is the result of compressing a chunk of the internet like?" → "A zip file of the internet."
+- "LLMs: How does training's compression differ from a zip file?" → "Training's compression is lossy; a zip file is lossless."
+- "LLMs: How do models improve?" → "By scaling data and compute."
+
+Cards Spencer cut from that lecture, and why:
+- "How do you run an open-weights LLM on a laptop?" (a how-to procedure, not an idea)
+- "How is the size of a parameters file determined?" (arithmetic trivia)
+- "How does the cost of training compare with running it?" (asks for a comparison; ask why instead)
+- Vocab terms: dependencies, compression ratio, training run, computational complexity, data type, state-of-the-art (generic words, not concepts of the subject)
