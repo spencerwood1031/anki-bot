@@ -9,7 +9,8 @@ Pipeline: YouTube URL → timestamped transcript → technical terms → 5–15 
 - Never write or edit anything in `golden/`. Those files are Spencer's hand-written ground truth.
 - Phase 1 only for now. The critic pass, frame captures and review screen come later.
 - The `## Card rules` section below is also sent to Claude in the card-drafting prompt (`ankibot/prompts.py` reads it), so edit the rules there and only there.
-- Evals (planned, not built): `evals/eval_terms.py` will compare `outputs/<id>/terms.json` against `golden/<id>/jargon.txt` (recall and precision, with an LLM judging whether two terms match).
+- Two passes: `make_deck.py <url> --terms` makes only the vocab list; the full run writes conceptual cards (no plain vocab cards).
+- Evals: `evals/eval_terms.py <id>` compares `outputs/<id>/terms.json` against `golden/<id>/jargon.txt` (recall and precision, with Claude judging whether two terms match).
 
 
 ## Card rules

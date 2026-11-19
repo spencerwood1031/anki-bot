@@ -91,7 +91,12 @@ Card formats:
   back is optional extra context (may be empty).
 
 Each card's start_seconds is the [seconds] marker where the lecture explains it.
-An idea may need more than one card to keep each card atomic."""
+An idea may need more than one card to keep each card atomic.
+
+Vocabulary is handled in a separate pass, so these cards are conceptual: how
+things work, why they matter, and how they relate. Use the terms list for
+context and correct wording, but don't write cards whose only job is to define
+a term, expand an abbreviation, or recall a bare name."""
 
 
 def cards_user(transcript_text: str, ideas, terms) -> str:
@@ -107,3 +112,27 @@ Write flashcards for these key ideas, using the transcript for the details:
 <ideas>
 {_format_ideas(ideas)}
 </ideas>"""
+
+
+# ---- Eval: match the tool's terms against Spencer's golden list ----
+
+MATCH_SYSTEM = """You grade a vocabulary extractor against a hand-written answer key.
+For each golden term, find the tool term that means the same thing, if any.
+Count it as a match when they name the same concept, even if the wording differs
+("ReLU" and "rectified linear unit", "sigmoid" and "sigmoid function").
+Don't count a broader or narrower term as a match ("layer" is not "hidden layer").
+Each tool term can match at most one golden term."""
+
+
+def match_user(golden_terms, tool_terms) -> str:
+    golden = "\n".join(f"- {t}" for t in golden_terms)
+    tool = "\n".join(f"- {t}" for t in tool_terms)
+    return f"""<golden_terms>
+{golden}
+</golden_terms>
+
+<tool_terms>
+{tool}
+</tool_terms>
+
+For every golden term, give the matching tool term exactly as written, or null if none matches."""
