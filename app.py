@@ -106,7 +106,7 @@ def download():
     cards = []
     for card in data["cards"]:
         if card["card_type"] == "cloze" and "{{c" not in card["front"]:
-            return jsonify(error=f'This cloze card has no {{{{c1::...}}}} blank: "{card["front"]}"'), 400
+            return jsonify(error=f'This fill-in-the-blank card has no blank: "{card["front"]}"'), 400
         card["source_url"] = timestamp_url(video_id, card.get("start_seconds", 0))
         cards.append(card)
     if not cards:

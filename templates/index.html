@@ -120,6 +120,17 @@
     .suggestion .why { color: var(--muted); margin: 0 0 8px; }
     .suggestion .s-card { margin: 0 0 8px; }
     .new-card { border-style: dashed; }
+    .field-label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 0 4px; }
+    .card input.hidden-part { margin-bottom: 8px; }
+    .problem { color: var(--error-text); font-size: 14px; margin: -2px 0 8px; }
+    /* The hidden part of a fill-in-the-blank card, shown highlighted. */
+    .blank {
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
+      color: var(--text);
+      border-radius: 4px;
+      padding: 0 4px;
+      font-weight: 600;
+    }
     .bottom-bar { display: flex; gap: 12px; margin-top: 20px; }
     .bottom-bar button { flex: 1; }
     button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--border); }
@@ -178,8 +189,7 @@
           <option value="cloze">Fill in the blank</option>
         </select>
       </div>
-      <textarea id="new-front" rows="2" placeholder="Question (or a sentence with {{c1::the hidden part}} for fill in the blank)"></textarea>
-      <textarea id="new-back" rows="2" placeholder="Answer (optional for fill in the blank)"></textarea>
+      <div id="new-fields"></div>
       <button id="add-card" class="small" type="button">Add card</button>
     </div>
 
@@ -354,6 +364,92 @@
     window.scrollTo(0, 0);
   }
 
+  // ---------------- Fill-in-the-blank cards ----------------
+  // Anki stores a blank as {{c1::hidden part}}. Visitors never see that code:
+  // they edit a sentence with ___ where the blank goes, plus the hidden part,
+  // and we turn the two back into Anki's format.
+
+  const BLANK = "___";
+  const CLOZE = /\{\{c\d+::(.*?)(?:::.*?)?\}\}/g;
+
+  // "Cost about {{c1::$2 million}}." -> { sentence: "Cost about ___.", hidden: "$2 million" }
+  function clozeParts(front) {
+    let hidden = "";
+    const sentence = front.replace(CLOZE, (match, text) => {
+      if (hidden) return text;  // one blank per card; any extra blanks become plain text
+      hidden = text;
+      return BLANK;
+    });
+    return { sentence, hidden };
+  }
+
+  // The reverse. If there's no ___, the hidden part's first appearance in the
+  // sentence becomes the blank. Returns "" if there's nowhere to put it.
+  function clozeFront(sentence, hidden) {
+    hidden = hidden.trim();
+    if (!hidden) return "";
+    const cloze = () => `{{c1::${hidden}}}`;  // a function, so "$" in the answer stays literal
+    if (sentence.includes(BLANK)) return sentence.replace(BLANK, cloze);
+    if (sentence.includes(hidden)) return sentence.replace(hidden, cloze);
+    return "";
+  }
+
+  // A card's front as readable nodes: the sentence with its hidden part highlighted.
+  function readableFront(card) {
+    if (card.card_type !== "cloze") return [card.front];
+    const { sentence, hidden } = clozeParts(card.front);
+    const [before, after = ""] = sentence.split(BLANK);
+    return [before, el("span", { className: "blank", textContent: hidden }), after];
+  }
+
+  // The edit boxes for one card (also used by the "Add your own card" form).
+  function editorFields(card) {
+    const box = (label, input) => [el("label", { className: "field-label", textContent: label }), input];
+
+    if (card.card_type !== "cloze") {
+      const front = el("textarea", { rows: 2, value: card.front, placeholder: "e.g. Neural nets: what does a neuron hold?" });
+      front.oninput = () => { card.front = front.value; };
+      const back = el("textarea", { rows: 2, value: card.back, placeholder: "e.g. A number between 0 and 1" });
+      back.oninput = () => { card.back = back.value; };
+      return [...box("Question", front), ...box("Answer", back)];
+    }
+
+    if (card.sentence === undefined) Object.assign(card, clozeParts(card.front));
+    const problem = el("p", { className: "problem", textContent:
+      "Type the hidden part, and either put ___ where it goes or use the same words in the sentence." });
+    const update = () => {
+      card.front = clozeFront(card.sentence, card.hidden);
+      problem.hidden = !!card.front || (!card.sentence && !card.hidden);
+    };
+    const sentence = el("textarea", { rows: 2, value: card.sentence, placeholder: "e.g. Training Llama 2 cost about ___." });
+    sentence.oninput = () => { card.sentence = sentence.value; update(); };
+    const hidden = el("input", { className: "hidden-part", value: card.hidden, placeholder: "e.g. $2 million" });
+    hidden.oninput = () => { card.hidden = hidden.value; update(); };
+    const extra = el("textarea", { rows: 1, value: card.back, placeholder: "Optional: shown with the answer" });
+    extra.oninput = () => { card.back = extra.value; };
+    update();
+    return [
+      ...box("Sentence (___ marks the blank)", sentence),
+      ...box("Hidden part", hidden), problem,
+      ...box("Extra context", extra),
+    ];
+  }
+
+  // Switching type keeps the words: "Cost about ___." + "$2 million" <-> question + answer.
+  function changeType(card, newType) {
+    if (newType === card.card_type) return;
+    if (newType === "cloze") {
+      Object.assign(card, { sentence: card.front, hidden: card.back, back: "" });
+      card.front = clozeFront(card.sentence, card.hidden);
+    } else {
+      const { sentence, hidden } = card.sentence !== undefined ? card : clozeParts(card.front);
+      Object.assign(card, { front: sentence, back: hidden });
+      delete card.sentence;
+      delete card.hidden;
+    }
+    card.card_type = newType;
+  }
+
   function renderCards() {
     const list = $("card-list");
     list.replaceChildren(...deck.cards.map(renderCard));
@@ -365,7 +461,7 @@
       el("option", { value: "basic", textContent: "Question / answer" }),
       el("option", { value: "cloze", textContent: "Fill in the blank" }));
     typeSelect.value = card.card_type;
-    typeSelect.onchange = () => { card.card_type = typeSelect.value; };
+    typeSelect.onchange = () => { changeType(card, typeSelect.value); renderCards(); };
 
     const time = el("input", { className: "time", value: formatTime(card.start_seconds || 0), ariaLabel: "Time in video" });
     time.onchange = () => { card.start_seconds = parseTime(time.value); renderCards(); };
@@ -380,18 +476,12 @@
     const deleteButton = el("button", { className: "small danger", type: "button", textContent: "Delete" });
     deleteButton.onclick = () => { deck.cards.splice(index, 1); renderCards(); };
 
-    const front = el("textarea", { rows: 2, value: card.front, ariaLabel: "Front" });
-    front.oninput = () => { card.front = front.value; };
-    const back = el("textarea", { rows: 2, value: card.back, ariaLabel: "Back",
-      placeholder: card.card_type === "cloze" ? "Extra context (optional)" : "Answer" });
-    back.oninput = () => { card.back = back.value; };
-
     return el("div", { className: "card" },
       el("div", { className: "card-top" },
         el("span", { textContent: `#${index + 1}` }), typeSelect, time,
         card.start_seconds > 0 || deck.hasTimestamps ? watch : "",
         el("span", { className: "spacer" }), suggestButton, deleteButton),
-      front, back,
+      ...editorFields(card),
       card.error ? el("p", { className: "hint", textContent: card.error }) : "",
       card.suggestion ? renderSuggestion(card, index) : "");
   }
@@ -416,9 +506,13 @@
 
     return el("div", { className: "suggestion" },
       el("p", { className: "why", textContent: s.why }),
-      ...(unchanged ? [] : s.cards.map((c) => el("p", { className: "s-card" },
-        el("b", { textContent: "Front: " }), c.front, el("br"),
-        el("b", { textContent: "Back: " }), c.back || "(empty)"))),
+      ...(unchanged ? [] : s.cards.map((c) => c.card_type === "cloze"
+        ? el("p", { className: "s-card" },
+            el("b", { textContent: "Fill in the blank: " }), ...readableFront(c),
+            ...(c.back ? [el("br"), el("b", { textContent: "Extra: " }), c.back] : []))
+        : el("p", { className: "s-card" },
+            el("b", { textContent: "Question: " }), c.front, el("br"),
+            el("b", { textContent: "Answer: " }), c.back || "(empty)"))),
       el("div", { className: "row" }, ...(unchanged ? [] : [useButton]), keepButton));
   }
 
@@ -429,7 +523,7 @@
     try {
       card.suggestion = await askClaude("suggest", {
         title: deck.title,
-        card: { card_type: card.card_type, front: card.front, back: card.back },
+        card: { card_type: card.card_type, front: card.front || card.sentence || "", back: card.back },
       });
     } catch (error) {
       card.error = error.message;
@@ -440,19 +534,37 @@
   }
 
   // Adding your own card also asks Claude for a better version right away.
+  // The "Add your own card" form edits a draft card, using the same fields as the list.
+  let draft;
+  function resetDraft() {
+    draft = { card_type: $("new-type").value, front: "", back: "", start_seconds: 0 };
+    $("new-fields").replaceChildren(...editorFields(draft));
+  }
+  $("new-type").addEventListener("change", () => {
+    changeType(draft, $("new-type").value);
+    $("new-fields").replaceChildren(...editorFields(draft));
+  });
+  resetDraft();
+
   $("add-card").addEventListener("click", () => {
-    const front = $("new-front").value.trim();
-    if (!front) { $("new-front").focus(); return; }
-    const card = { card_type: $("new-type").value, front, back: $("new-back").value.trim(), start_seconds: 0 };
+    if (!draft.front.trim()) { $("new-fields").querySelector("textarea").focus(); return; }
+    const card = { card_type: draft.card_type, front: draft.front.trim(), back: draft.back.trim(),
+                   start_seconds: draft.start_seconds };
     deck.cards.push(card);
-    $("new-front").value = "";
-    $("new-back").value = "";
+    resetDraft();
     suggestFor(card);
   });
 
   // ---------------- Step 3: download ----------------
 
   $("download").addEventListener("click", async () => {
+    const unfinished = deck.cards
+      .map((card, i) => (card.card_type === "cloze" && !card.front ? `#${i + 1}` : null))
+      .filter(Boolean);
+    if (unfinished.length) {
+      showStatus($("review-status"), `Card ${unfinished.join(", ")} needs its hidden part filled in before downloading.`, true);
+      return;
+    }
     const button = $("download");
     button.disabled = true;
     try {
