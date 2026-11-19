@@ -34,11 +34,17 @@ You will read a lecture transcript and list the technical terms worth a flashcar
 
 List every technical word the lecture uses: named concepts, techniques,
 components, notation, acronyms and jargon. Include general technical words the
-lecture uses without explaining them (e.g. GPU, zip file, neural network), since
-a student may not know them. Skip everyday words and names of people.
+lecture uses without explaining them (e.g. GPU, zip file, compile, binary), since
+a student may not know them.
 
-Give each term a short definition as it is used in this lecture: the fewest
-words that make the meaning clear, because it becomes the back of a flashcard."""
+Skip: everyday words; names of people; product, model and company names (e.g.
+Llama 2, ChatGPT, Claude); units of storage (byte, gigabyte); programming
+languages (C, Python); and generic words like "state-of-the-art" or "data type".
+
+Give each term a short definition: the fewest words that make the meaning clear,
+because it becomes the back of a flashcard. A definition must contain no
+numbers, sizes, counts, costs or examples from the lecture, and must not define
+a term by a synonym (don't define "parameters" as "weights"); say what it is."""
 
 
 def terms_user(transcript_text: str) -> str:

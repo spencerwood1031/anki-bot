@@ -27,7 +27,9 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 8. **Minimum wording.** Cut every word that isn't needed to get the answer. Start the front with a short topic label (e.g. "Neural nets:") instead of long setup wording; this also keeps similar cards from being confused.
 9. **Follow the lecture's story.** Main-idea cards walk through the lecture's main line of reasoning, one step per card, so together they read as a chain (training is like compressing the internet → done on a GPU cluster → the result is like a zip file → but lossy). Few cards, no side angles.
 10. **No trivia.** No cards on illustrative numbers (costs, counts, sizes, durations), on things mentioned only in passing, or about the speaker ("What analogy does Karpathy use…"). Ask about the idea itself.
-11. **Every technical word gets two vocab cards.** Any technical word the lecture uses, even a general one it doesn't explain (GPU, zip file, neural network). Card one: "LLMs: Lossy compression" → its short definition. Card two: "LLMs: " + that definition → "Lossy compression". Write both out as basic cards.
+11. **Every technical word gets two vocab cards.** Any technical word the lecture uses, even a general one it doesn't explain (GPU, zip file, neural network, compile, binary). Card one: "LLMs: Lossy compression" → its short definition. Card two: "LLMs: " + that definition → "Lossy compression". Write both out as basic cards.
+12. **Vocab is concepts, not names or basics.** No product, model or company names (Llama 2, ChatGPT, Claude), no units of storage (byte, gigabyte), no programming languages (C, Python), and no generic words like "state-of-the-art" or "data type".
+13. **Definitions hold no numbers or trivia.** No sizes, counts, costs or lecture-specific examples ("140 GB for Llama 2 70B"). Never define a term by its synonym (parameters ↔ weights); say what it is.
 
 ### Examples
 - Bad: "What are the characteristics of the Dead Sea?" (too broad). Good: "Where is the Dead Sea located?" → "On the border between Israel and Jordan."
