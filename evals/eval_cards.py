@@ -5,7 +5,8 @@ Usage:
     python evals/eval_cards.py <video_id>
     python evals/eval_cards.py <video_id> --until 3600  # only cards from the first hour
 
-Compares outputs/<video_id>/cards.json with golden/<video_id>/cards.md and
+Compares the main-idea cards in outputs/<video_id>/cards.json with
+golden/<video_id>/cards.md (your main-idea cards only; vocab lives in jargon.txt) and
 gives three numbers:
   - Recall:    of your cards, how many does the tool have a matching card for?
   - Precision: of the tool's cards, how many match one of yours?
@@ -52,6 +53,8 @@ def main(video_id: str, until: int | None) -> None:
         sys.exit(f"golden/{video_id}/cards.md has no cards yet.")
 
     tool = json.loads((ROOT / "outputs" / video_id / "cards.json").read_text())
+    # Vocab cards are scored by eval_terms.py, so only compare main-idea cards.
+    tool = [c for c in tool if c.get("kind", "idea") == "idea"]
     if until is not None:
         # Only compare the part of the video Spencer wrote cards for.
         tool = [c for c in tool if c["start_seconds"] <= until]

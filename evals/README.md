@@ -2,7 +2,7 @@
 
 Ground truth lives in `golden/<video_id>/`, written by hand by Spencer:
 - `jargon.txt`: one technical term per line
-- `cards.md`: ideal cards for the video
+- `cards.md`: ideal main-idea cards for the video (vocab goes in `jargon.txt`)
 
 The tool never writes to `golden/`.
 
@@ -29,7 +29,8 @@ python make_deck.py <url>
 python evals/eval_cards.py <video_id>
 python evals/eval_cards.py <video_id> --until 3600   # only cards from the first hour
 ```
-Compares `outputs/<video_id>/cards.json` with `golden/<video_id>/cards.md`
+Compares the main-idea cards in `outputs/<video_id>/cards.json` with `golden/<video_id>/cards.md`
+(write only main-idea cards there; vocab is scored against `jargon.txt`)
 (one card per blank-line-separated block; lines starting with `#` are ignored).
 
 - Recall = your cards the tool has a matching card for / all your cards

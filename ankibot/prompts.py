@@ -32,12 +32,13 @@ def _format_ideas(ideas) -> str:
 TERMS_SYSTEM = """You help a student turn a lecture into flashcards.
 You will read a lecture transcript and list the technical terms worth a flashcard.
 
-A term is worth a card if it is domain vocabulary a student would need to know to
-follow this subject: named concepts, techniques, components, notation, or jargon.
-Skip everyday words, names of people, and terms that are only mentioned in passing
-without being explained or used.
+List every technical word the lecture uses: named concepts, techniques,
+components, notation, acronyms and jargon. Include general technical words the
+lecture uses without explaining them (e.g. GPU, zip file, neural network), since
+a student may not know them. Skip everyday words and names of people.
 
-Give each term a one-sentence definition as it is used in this lecture."""
+Give each term a short definition as it is used in this lecture: the fewest
+words that make the meaning clear, because it becomes the back of a flashcard."""
 
 
 def terms_user(transcript_text: str) -> str:
@@ -56,9 +57,11 @@ IDEAS_SYSTEM = """You help a student turn a lecture into flashcards.
 You will read a lecture transcript and pick the 5 to 15 most important ideas.
 
 An important idea is something the lecture spends time explaining and that a
-student should still understand a month later: a mechanism, a reason, a
-relationship between concepts, or a key fact. Prefer ideas that explain why or
-how over ideas that only name things. Order them as they appear in the lecture.
+student should still understand a month later: a mechanism, a reason, or a
+relationship between concepts. Follow the lecture's main line of reasoning, so
+the ideas read as a chain, and order them as they appear in the lecture. Skip
+illustrative numbers (costs, counts, sizes, durations), side remarks, and
+anything about the speaker rather than the subject.
 
 For each idea, give the [seconds] marker of the transcript line where the
 explanation begins."""
@@ -90,13 +93,20 @@ Card formats:
 - "cloze": front is a sentence with the hidden part written as {{{{c1::hidden text}}}},
   back is optional extra context (may be empty).
 
-Each card's start_seconds is the [seconds] marker where the lecture explains it.
-An idea may need more than one card to keep each card atomic.
+Write two kinds of cards:
 
-Vocabulary is handled in a separate pass, so these cards are conceptual: how
-things work, why they matter, and how they relate. Use the terms list for
-context and correct wording, but don't write cards whose only job is to define
-a term, expand an abbreviation, or recall a bare name."""
+1. Vocab cards (kind "vocab"): for EVERY term in the terms list, write two basic
+   cards, in the order of the list:
+   - front "<topic>: <term>", back: its short definition.
+   - front "<topic>: <short definition>", back: the term.
+   <topic> is a short label for the lecture's subject (e.g. "LLMs"), the same on
+   every card. start_seconds is where the term first comes up.
+
+2. Main-idea cards (kind "idea"): usually one card per key idea, walking
+   through the lecture's main line of reasoning. Only split an idea into two
+   cards when it won't fit one short answer. Don't repeat the vocab cards.
+
+Each card's start_seconds is the [seconds] marker where the lecture explains it."""
 
 
 def cards_user(transcript_text: str, ideas, terms) -> str:
@@ -108,7 +118,8 @@ def cards_user(transcript_text: str, ideas, terms) -> str:
 {_format_terms(terms)}
 </terms>
 
-Write flashcards for these key ideas, using the transcript for the details:
+Write two vocab cards for every term above, then main-idea cards for these
+key ideas, using the transcript for the details:
 <ideas>
 {_format_ideas(ideas)}
 </ideas>"""
@@ -197,8 +208,8 @@ def grade_system() -> str:
 
 {card_rules()}
 
-Also count these as breaking rule 10: a card whose only job is to define a term,
-expand an abbreviation or recall a bare name (vocabulary has its own deck).
+These are main-idea cards; vocab cards are graded separately, so a card whose
+only job is to define a term breaks rule 9 here.
 
 Be strict but fair: only flag a rule the card clearly breaks. For each broken
 rule give a short reason a student would understand."""

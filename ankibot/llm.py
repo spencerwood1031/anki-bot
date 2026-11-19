@@ -58,6 +58,7 @@ class IdeaList(BaseModel):
 
 
 class Card(BaseModel):
+    kind: Literal["vocab", "idea"]  # a vocab (term) card or a main-idea card
     card_type: Literal["basic", "cloze"]
     front: str           # basic: the question. cloze: text with {{c1::...}}
     back: str            # basic: the answer. cloze: optional extra context
