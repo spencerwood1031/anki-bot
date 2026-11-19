@@ -37,6 +37,9 @@ components, notation, acronyms and jargon. Include general technical words the
 lecture uses without explaining them (e.g. GPU, zip file, compile, binary), since
 a student may not know them.
 
+When two terms mean almost the same thing in this lecture (e.g. open-source
+model and open-weights model), list only the one the lecture leans on.
+
 Skip: everyday words; names of people; product, model and company names (e.g.
 Llama 2, ChatGPT, Claude); units of storage (byte, gigabyte); programming
 languages (C, Python); and generic words like "state-of-the-art" or "data type".
@@ -110,6 +113,10 @@ Write two kinds of cards:
    - front "<topic>: <short definition>", back: the term.
    <topic> is a short label for the lecture's subject (e.g. "LLMs"), the same on
    every card. start_seconds is where the term first comes up.
+
+   If a definition had to leave out something important that no main-idea
+   card will cover, add one extra basic question card (kind "vocab") for it.
+   Never for trivia, and never for something a main-idea card already asks.
 
 2. Main-idea cards (kind "idea"): usually one card per key idea, walking
    through the lecture's main line of reasoning. Only split an idea into two
