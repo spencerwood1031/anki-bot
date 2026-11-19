@@ -4,13 +4,18 @@ Run it on your computer:
     flask --app app run --debug
 then open http://127.0.0.1:5000
 
-How it fits together:
-- GET  /           sends the web page (templates/index.html).
-- POST /api/deck   gets {url, api_key, transcript?} from that page, runs the
-                   same pipeline as make_deck.py, and sends back the .apkg file.
+How it fits together (the page in templates/index.html calls these):
+- GET  /              sends the web page.
+- POST /api/cards     {url, api_key, transcript?} -> runs the same pipeline as
+                      make_deck.py and returns the cards as JSON, so the visitor
+                      can review, edit, delete and add cards on the page.
+- POST /api/suggest   {api_key, card, title} -> Claude's rewrite of one card so
+                      it follows the card rules in CLAUDE.md.
+- POST /api/download  {video_id, title, cards} -> the finished .apkg file.
 
-The visitor's API key is used for this one request and then forgotten.
-It is never saved or logged.
+The server keeps nothing between requests: the cards live on the page until
+the visitor downloads them. The visitor's API key is used for one request and
+then forgotten. It is never saved or logged.
 """
 
 import json
@@ -20,13 +25,15 @@ import urllib.request
 from pathlib import Path
 
 import anthropic
-from flask import Flask, jsonify, render_template, request, send_file
+import requests  # comes with youtube-transcript-api; used for its network errors
+from flask import Flask, jsonify, request, send_file
 from youtube_transcript_api import CouldNotRetrieveTranscript
 
 from ankibot import deck, llm, transcript
 from ankibot.links import timestamp_url
 
 app = Flask(__name__)
+PAGE = Path(__file__).parent / "templates" / "index.html"
 
 # Long lectures cost the visitor more and can exceed what Claude reads in one go.
 # About 3 hours of speech is roughly this many characters.
@@ -39,60 +46,100 @@ class UserError(Exception):
 
 @app.get("/")
 def home():
-    return render_template("index.html")
+    # Sent as a plain file, not a Flask template, because the page shows
+    # cloze examples like {{c1::...}} that the template engine would misread.
+    return send_file(PAGE)
 
 
-@app.post("/api/deck")
-def make_deck():
+@app.post("/api/cards")
+def make_cards():
     data = request.get_json()
     try:
-        apkg_path, filename = build_deck_for(
+        result = cards_for(
             url=data.get("url", "").strip(),
             api_key=data.get("api_key", "").strip(),
             pasted_transcript=data.get("transcript", "").strip(),
         )
     except UserError as error:
         return jsonify(error=str(error)), 400
-    return send_file(apkg_path, as_attachment=True, download_name=filename)
+    return jsonify(result)
 
 
-def build_deck_for(url: str, api_key: str, pasted_transcript: str) -> tuple[str, str]:
-    """Run the whole pipeline for one visitor. Returns (apkg path, download name)."""
+@app.post("/api/suggest")
+def suggest():
+    data = request.get_json()
+    try:
+        client = client_for(data.get("api_key", "").strip(), check=False)
+        card = llm.SuggestedCard(**data["card"])
+        suggestion = call_claude(llm.suggest_rewrite, client, card, data.get("title", ""))
+    except UserError as error:
+        return jsonify(error=str(error)), 400
+    return jsonify(suggestion.model_dump())
+
+
+@app.post("/api/download")
+def download():
+    data = request.get_json()
+    video_id = data["video_id"]
+    title = data.get("title") or f"Lecture {video_id}"
+    cards = []
+    for card in data["cards"]:
+        if card["card_type"] == "cloze" and "{{c" not in card["front"]:
+            return jsonify(error=f'This cloze card has no {{{{c1::...}}}} blank: "{card["front"]}"'), 400
+        card["source_url"] = timestamp_url(video_id, card.get("start_seconds", 0))
+        cards.append(card)
+    if not cards:
+        return jsonify(error="The deck is empty. Add a card first."), 400
+
+    # A fresh temporary folder per request, so two visitors never share files.
+    apkg_path = Path(tempfile.mkdtemp()) / "deck.apkg"
+    deck.build_deck(video_id, title, cards, str(apkg_path))
+    return send_file(apkg_path, as_attachment=True, download_name=safe_filename(title) + ".apkg")
+
+
+def cards_for(url: str, api_key: str, pasted_transcript: str) -> dict:
+    """Run the pipeline for one visitor and return {video_id, title, cards}."""
     try:
         video_id = transcript.get_video_id(url)
     except (ValueError, KeyError, IndexError):
         raise UserError("That doesn't look like a YouTube video link.")
-
-    if not api_key:
-        raise UserError("Paste your Anthropic API key.")
-    client = llm.make_client(api_key)
-    check_key(client)  # before the transcript, so a bad key fails fast
+    client = client_for(api_key)  # before the transcript, so a bad key fails fast
 
     segments = get_segments(video_id, pasted_transcript)
     transcript_text = transcript.format_for_prompt(segments)
     if len(transcript_text) > MAX_TRANSCRIPT_CHARS:
         raise UserError("That video is too long. Try one under about 3 hours.")
 
+    terms = call_claude(llm.extract_terms, client, transcript_text)
+    ideas = call_claude(llm.pick_ideas, client, transcript_text, terms)
+    cards = call_claude(llm.draft_cards, client, transcript_text, ideas, terms)
+    return {
+        "video_id": video_id,
+        "title": video_title(video_id),
+        "cards": [card.model_dump() for card in cards],
+    }
+
+
+def client_for(api_key: str, check: bool = True) -> anthropic.Anthropic:
+    """Make a Claude client for the visitor's key, checking it first if asked."""
+    if not api_key:
+        raise UserError("Paste your Anthropic API key.")
+    client = llm.make_client(api_key)
+    if check:
+        check_key(client)
+    return client
+
+
+def call_claude(step, *args):
+    """Run one Claude step, turning API errors into messages the visitor can act on."""
     try:
-        terms = llm.extract_terms(client, transcript_text)
-        ideas = llm.pick_ideas(client, transcript_text, terms)
-        cards = llm.draft_cards(client, transcript_text, ideas, terms)
+        return step(*args)
+    except anthropic.AuthenticationError:
+        raise UserError("That API key didn't work. Check it at console.anthropic.com.")
     except anthropic.RateLimitError:
         raise UserError("Your API key hit its rate limit. Wait a minute and try again.")
     except anthropic.APIStatusError as error:
         raise UserError(f"Claude returned an error: {error.message}")
-
-    card_dicts = []
-    for card in cards:
-        card_dict = card.model_dump()
-        card_dict["source_url"] = timestamp_url(video_id, card.start_seconds)
-        card_dicts.append(card_dict)
-
-    title = video_title(video_id)
-    # A fresh temporary folder per request, so two visitors never share files.
-    apkg_path = Path(tempfile.mkdtemp()) / "deck.apkg"
-    deck.build_deck(video_id, title, card_dicts, str(apkg_path))
-    return str(apkg_path), safe_filename(title) + ".apkg"
 
 
 def check_key(client: anthropic.Anthropic) -> None:
@@ -111,7 +158,7 @@ def get_segments(video_id: str, pasted_transcript: str) -> list[dict]:
         return transcript.parse_pasted_transcript(pasted_transcript)
     try:
         return transcript.fetch_transcript(video_id)
-    except CouldNotRetrieveTranscript:
+    except (CouldNotRetrieveTranscript, requests.RequestException):
         raise UserError(
             "Couldn't get this video's transcript from YouTube. It may have no captions, "
             "or YouTube blocked the request. You can paste the transcript instead."

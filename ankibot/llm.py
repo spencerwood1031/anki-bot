@@ -67,6 +67,17 @@ class CardList(BaseModel):
     cards: list[Card]
 
 
+class SuggestedCard(BaseModel):
+    card_type: Literal["basic", "cloze"]
+    front: str
+    back: str
+
+
+class Suggestion(BaseModel):
+    why: str                     # one or two sentences: which rules the rewrite fixes
+    cards: list[SuggestedCard]   # usually one; more if the original held several ideas
+
+
 class TermMatch(BaseModel):
     golden_term: str
     tool_term: str | None  # None when the tool missed this golden term
@@ -120,6 +131,17 @@ def draft_cards(client: anthropic.Anthropic, transcript_text: str, ideas: list[I
         CardList,
     )
     return result.cards
+
+
+# ---- Website: improve a card the visitor wrote or edited ----
+
+def suggest_rewrite(client: anthropic.Anthropic, card: SuggestedCard, deck_title: str) -> Suggestion:
+    return _ask(
+        client,
+        prompts.suggest_system(),
+        prompts.suggest_user(card, deck_title),
+        Suggestion,
+    )
 
 
 # ---- Eval call ----

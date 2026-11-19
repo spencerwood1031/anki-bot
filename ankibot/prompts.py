@@ -114,6 +114,36 @@ Write flashcards for these key ideas, using the transcript for the details:
 </ideas>"""
 
 
+# ---- Website: suggest a better version of a visitor's card ----
+
+def suggest_system() -> str:
+    return f"""You help a student improve an Anki flashcard they wrote themselves.
+Rewrite it so it follows these rules:
+
+{card_rules()}
+
+Card formats:
+- "basic": front is a question, back is the answer.
+- "cloze": front is a sentence with the hidden part written as {{{{c1::hidden text}}}},
+  back is optional extra context (may be empty).
+
+Keep the student's meaning and facts; don't add new information. If the card
+already follows the rules, return it unchanged and say so. If it holds several
+ideas, split it into several cards. In "why", name the rules the rewrite fixes
+in one or two short sentences, written to the student."""
+
+
+def suggest_user(card, deck_title: str) -> str:
+    return f"""The card is from a deck on the lecture "{deck_title}".
+
+<card type="{card.card_type}">
+<front>{card.front}</front>
+<back>{card.back}</back>
+</card>
+
+Suggest a better version."""
+
+
 # ---- Eval: match the tool's terms against Spencer's golden list ----
 
 MATCH_SYSTEM = """You grade a vocabulary extractor against a hand-written answer key.
