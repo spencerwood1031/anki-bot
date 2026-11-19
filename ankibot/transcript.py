@@ -1,8 +1,10 @@
 """Step 1: get a timestamped transcript for a YouTube video."""
 
+import os
 from urllib.parse import parse_qs, urlparse
 
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import WebshareProxyConfig
 
 
 def get_video_id(url: str) -> str:
@@ -33,8 +35,24 @@ def fetch_transcript(video_id: str) -> list[dict]:
     Each segment looks like: {"text": "...", "start": 12.3, "duration": 4.1}
     where start and duration are in seconds.
     """
-    fetched = YouTubeTranscriptApi().fetch(video_id)
-    return fetched.to_raw_data()
+    return _transcript_api().fetch(video_id).to_raw_data()
+
+
+def _transcript_api() -> YouTubeTranscriptApi:
+    """Fetch directly, or through a Webshare proxy if its login is set.
+
+    YouTube blocks transcript requests from cloud servers, so the hosted
+    website routes them through Webshare's home-internet IPs. On your own
+    computer, leave WEBSHARE_PROXY_USERNAME unset and it fetches directly.
+    """
+    username = os.environ.get("WEBSHARE_PROXY_USERNAME")
+    if not username:
+        return YouTubeTranscriptApi()
+    proxy = WebshareProxyConfig(
+        proxy_username=username,
+        proxy_password=os.environ["WEBSHARE_PROXY_PASSWORD"],
+    )
+    return YouTubeTranscriptApi(proxy_config=proxy)
 
 
 def format_for_prompt(segments: list[dict]) -> str:

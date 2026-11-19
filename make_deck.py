@@ -30,6 +30,7 @@ def save_json(path: Path, data) -> None:
 
 def main(url: str, terms_only: bool = False) -> None:
     video_id = transcript.get_video_id(url)
+    client = llm.make_client()
     out_dir = Path("outputs") / video_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -45,18 +46,18 @@ def main(url: str, terms_only: bool = False) -> None:
     transcript_text = transcript.format_for_prompt(segments)
 
     print("2/4 Extracting technical terms...")
-    terms = llm.extract_terms(transcript_text)
+    terms = llm.extract_terms(client, transcript_text)
     save_json(out_dir / "terms.json", [t.model_dump() for t in terms])
     if terms_only:
         print(f"Done: {len(terms)} terms. Score them with: python evals/eval_terms.py {video_id}")
         return
 
     print("3/4 Picking the key ideas...")
-    ideas = llm.pick_ideas(transcript_text, terms)
+    ideas = llm.pick_ideas(client, transcript_text, terms)
     save_json(out_dir / "ideas.json", [i.model_dump() for i in ideas])
 
     print("4/4 Drafting cards...")
-    cards = llm.draft_cards(transcript_text, ideas, terms)
+    cards = llm.draft_cards(client, transcript_text, ideas, terms)
     card_dicts = []
     for card in cards:
         card_dict = card.model_dump()

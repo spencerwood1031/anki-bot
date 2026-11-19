@@ -17,12 +17,22 @@ from ankibot import prompts
 # One place to change the model for every call.
 MODEL = "claude-opus-5-5"
 
-# The key comes from ANKI_BOT_API_KEY if set, otherwise ANTHROPIC_API_KEY.
-# The separate name is for cloud sessions, where ANTHROPIC_API_KEY is reserved
-# for Claude Code's own login.
-client = anthropic.Anthropic(
-    api_key=os.environ.get("ANKI_BOT_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
-)
+
+
+def make_client(api_key: str | None = None) -> anthropic.Anthropic:
+    """Make a Claude client. Every call below takes one as its first argument.
+
+    The website passes in the visitor's own key. Scripts pass nothing, and the
+    key comes from ANKI_BOT_API_KEY if set, otherwise ANTHROPIC_API_KEY. (The
+    separate name is for cloud sessions, where ANTHROPIC_API_KEY is reserved
+    for Claude Code's own login.)
+
+    Why not one shared client? On the website several visitors can make decks
+    at once, each with their own key, so each run needs its own client.
+    """
+    if api_key is None:
+        api_key = os.environ.get("ANKI_BOT_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
+    return anthropic.Anthropic(api_key=api_key)
 
 
 # ---- The shapes we ask Claude to return ----
@@ -68,7 +78,7 @@ class MatchList(BaseModel):
 
 # ---- The three calls ----
 
-def _ask(system: str, user: str, output_shape: type[BaseModel]) -> BaseModel:
+def _ask(client: anthropic.Anthropic, system: str, user: str, output_shape: type[BaseModel]) -> BaseModel:
     """Send one prompt and return Claude's answer as an instance of output_shape."""
     response = client.messages.parse(
         model=MODEL,
@@ -82,8 +92,9 @@ def _ask(system: str, user: str, output_shape: type[BaseModel]) -> BaseModel:
     return response.parsed_output
 
 
-def extract_terms(transcript_text: str) -> list[Term]:
+def extract_terms(client: anthropic.Anthropic, transcript_text: str) -> list[Term]:
     result = _ask(
+        client,
         prompts.TERMS_SYSTEM,
         prompts.terms_user(transcript_text),
         TermList,
@@ -91,8 +102,9 @@ def extract_terms(transcript_text: str) -> list[Term]:
     return result.terms
 
 
-def pick_ideas(transcript_text: str, terms: list[Term]) -> list[Idea]:
+def pick_ideas(client: anthropic.Anthropic, transcript_text: str, terms: list[Term]) -> list[Idea]:
     result = _ask(
+        client,
         prompts.IDEAS_SYSTEM,
         prompts.ideas_user(transcript_text, terms),
         IdeaList,
@@ -100,8 +112,9 @@ def pick_ideas(transcript_text: str, terms: list[Term]) -> list[Idea]:
     return result.ideas
 
 
-def draft_cards(transcript_text: str, ideas: list[Idea], terms: list[Term]) -> list[Card]:
+def draft_cards(client: anthropic.Anthropic, transcript_text: str, ideas: list[Idea], terms: list[Term]) -> list[Card]:
     result = _ask(
+        client,
         prompts.cards_system(),
         prompts.cards_user(transcript_text, ideas, terms),
         CardList,
@@ -111,9 +124,10 @@ def draft_cards(transcript_text: str, ideas: list[Idea], terms: list[Term]) -> l
 
 # ---- Eval call ----
 
-def match_terms(golden_terms: list[str], tool_terms: list[str]) -> list[TermMatch]:
+def match_terms(client: anthropic.Anthropic, golden_terms: list[str], tool_terms: list[str]) -> list[TermMatch]:
     """For each golden term, ask Claude which tool term (if any) means the same thing."""
     result = _ask(
+        client,
         prompts.MATCH_SYSTEM,
         prompts.match_user(golden_terms, tool_terms),
         MatchList,

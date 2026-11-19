@@ -38,7 +38,7 @@ def main(video_id: str) -> None:
     terms_path = ROOT / "outputs" / video_id / "terms.json"
     tool = [t["term"] for t in json.loads(terms_path.read_text())]
 
-    matches = llm.match_terms(golden, tool)
+    matches = llm.match_terms(llm.make_client(), golden, tool)
     # Look golden terms up case-insensitively, in case Claude changed capitals when
     # echoing them back, and only trust tool terms that really are in the tool's list.
     answers = {m.golden_term.lower(): m.tool_term for m in matches}
