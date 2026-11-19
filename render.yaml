@@ -1,0 +1,21 @@
+# Render reads this file to set up the website (a "Blueprint").
+# In Render: New + > Blueprint > pick this repo. See README.md, "Put it online".
+services:
+  - type: web
+    name: anki-bot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # gunicorn is a production web server for Flask apps.
+    # --timeout 600: a deck takes 1-3 minutes, far longer than the 30s default.
+    # --threads 4: up to 4 visitors can make decks at the same time.
+    startCommand: gunicorn app:app --workers 1 --threads 4 --timeout 600
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      # Your Webshare proxy login, so YouTube doesn't block transcript fetches.
+      # sync: false means Render asks you for the value instead of reading it here.
+      - key: WEBSHARE_PROXY_USERNAME
+        sync: false
+      - key: WEBSHARE_PROXY_PASSWORD
+        sync: false

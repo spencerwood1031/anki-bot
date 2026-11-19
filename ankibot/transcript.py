@@ -67,3 +67,40 @@ def format_for_prompt(segments: list[dict]) -> str:
         text = segment["text"].replace("\n", " ")
         lines.append(f"[{seconds}] {text}")
     return "\n".join(lines)
+
+
+def parse_pasted_transcript(text: str) -> list[dict]:
+    """Turn a transcript copied from YouTube's "Show transcript" panel into segments.
+
+    That panel copies as a timestamp line followed by its text, like:
+        0:00
+        In this video we'll look at...
+        1:02:15
+        and that's why it works.
+    Lines without a timestamp before them are kept, starting at 0 seconds,
+    so a plain paste with no timestamps still works (the card links just
+    all point to the start of the video).
+    """
+    segments = []
+    start = 0
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        seconds = _timestamp_to_seconds(line)
+        if seconds is not None:
+            start = seconds
+        else:
+            segments.append({"text": line, "start": start, "duration": 0})
+    return segments
+
+
+def _timestamp_to_seconds(line: str) -> int | None:
+    """'1:02:15' -> 3735. Returns None if the line isn't a timestamp."""
+    parts = line.split(":")
+    if not 2 <= len(parts) <= 3 or not all(p.isdigit() for p in parts):
+        return None
+    seconds = 0
+    for part in parts:
+        seconds = seconds * 60 + int(part)
+    return seconds
