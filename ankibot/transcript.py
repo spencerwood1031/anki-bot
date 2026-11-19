@@ -1,6 +1,7 @@
 """Step 1: get a timestamped transcript for a YouTube video."""
 
 import os
+import re
 from urllib.parse import parse_qs, urlparse
 
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -72,35 +73,47 @@ def format_for_prompt(segments: list[dict]) -> str:
 def parse_pasted_transcript(text: str) -> list[dict]:
     """Turn a transcript copied from YouTube's "Show transcript" panel into segments.
 
-    That panel copies as a timestamp line followed by its text, like:
-        0:00
-        In this video we'll look at...
-        1:02:15
-        and that's why it works.
-    Lines without a timestamp before them are kept, starting at 0 seconds,
-    so a plain paste with no timestamps still works (the card links just
-    all point to the start of the video).
+    Handles the shapes YouTube copies as:
+        0:00                          a timestamp on its own line,
+        In this video we'll look at   then the text;
+        1:02:15 and that's why...     or timestamp and text on one line.
+    YouTube sometimes adds a spoken-out label under each timestamp
+    ("2 minutes, 5 seconds"); those lines are skipped.
+
+    Lines with no timestamp before them start at 0 seconds, so a plain paste
+    with no timestamps still works. has_timestamps() tells the page whether
+    the card times mean anything.
     """
     segments = []
     start = 0
     for line in text.splitlines():
         line = line.strip()
-        if not line:
+        if not line or SPOKEN_TIME.fullmatch(line):
             continue
-        seconds = _timestamp_to_seconds(line)
-        if seconds is not None:
-            start = seconds
-        else:
-            segments.append({"text": line, "start": start, "duration": 0})
+        match = TIMESTAMP_AT_START.match(line)
+        if match:
+            start = _timestamp_to_seconds(match.group(1))
+            line = (match.group(2) or "").strip()
+            if not line:
+                continue
+        segments.append({"text": line, "start": start, "duration": 0})
     return segments
 
 
-def _timestamp_to_seconds(line: str) -> int | None:
-    """'1:02:15' -> 3735. Returns None if the line isn't a timestamp."""
-    parts = line.split(":")
-    if not 2 <= len(parts) <= 3 or not all(p.isdigit() for p in parts):
-        return None
+def has_timestamps(segments: list[dict]) -> bool:
+    """True if any segment starts after 0:00, i.e. we know where things are."""
+    return any(segment["start"] > 0 for segment in segments)
+
+
+# "1:02:15" or "0:05", optionally followed by the line's text.
+TIMESTAMP_AT_START = re.compile(r"(\d{1,2}(?::\d{2}){1,2})(?:\s+(.*)|$)")
+# YouTube's spoken-out labels: "5 seconds", "2 minutes, 5 seconds", "1 hour, 2 minutes".
+SPOKEN_TIME = re.compile(r"(\d+ (hours?|minutes?|seconds?),? ?)+")
+
+
+def _timestamp_to_seconds(stamp: str) -> int:
+    """'1:02:15' -> 3735."""
     seconds = 0
-    for part in parts:
+    for part in stamp.split(":"):
         seconds = seconds * 60 + int(part)
     return seconds
