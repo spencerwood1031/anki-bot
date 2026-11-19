@@ -58,6 +58,7 @@ class IdeaList(BaseModel):
 
 
 class Card(BaseModel):
+    kind: Literal["vocab", "idea"]  # a vocab (term) card or a main-idea card
     card_type: Literal["basic", "cloze"]
     front: str           # basic: the question. cloze: text with {{c1::...}}
     back: str            # basic: the answer. cloze: optional extra context
@@ -86,6 +87,29 @@ class TermMatch(BaseModel):
 
 class MatchList(BaseModel):
     matches: list[TermMatch]
+
+
+class Coverage(BaseModel):
+    golden_number: int        # G1 -> 1
+    tool_numbers: list[int]   # T3, T7 -> [3, 7]; empty when the tool missed it
+
+
+class CoverageList(BaseModel):
+    coverage: list[Coverage]
+
+
+class RuleBreak(BaseModel):
+    rule: int     # 1-10, the rule number in CLAUDE.md
+    reason: str   # one short sentence
+
+
+class Grade(BaseModel):
+    tool_number: int
+    breaks: list[RuleBreak]   # empty when the card follows every rule
+
+
+class GradeList(BaseModel):
+    grades: list[Grade]
 
 
 # ---- The three calls ----
@@ -186,3 +210,15 @@ def match_terms(client: anthropic.Anthropic, golden_terms: list[str], tool_terms
         MatchList,
     )
     return result.matches
+
+
+def cover_cards(client: anthropic.Anthropic, golden_cards: list[str], tool_cards: list[dict]) -> list[Coverage]:
+    """For each golden card, ask Claude which tool cards test the same knowledge."""
+    result = _ask(client, prompts.COVER_SYSTEM, prompts.cover_user(golden_cards, tool_cards), CoverageList)
+    return result.coverage
+
+
+def grade_cards(client: anthropic.Anthropic, tool_cards: list[dict]) -> list[Grade]:
+    """Ask Claude which card rules each tool card breaks."""
+    result = _ask(client, prompts.grade_system(), prompts.grade_user(tool_cards), GradeList)
+    return result.grades
