@@ -41,8 +41,11 @@ Skip: everyday words; names of people; product, model and company names (e.g.
 Llama 2, ChatGPT, Claude); units of storage (byte, gigabyte); programming
 languages (C, Python); and generic words like "state-of-the-art" or "data type".
 
-Give each term a short definition: the fewest words that make the meaning clear,
-because it becomes the back of a flashcard. A definition must contain no
+Give each term a short, atomic definition: one clause with the core meaning
+only, because it becomes the back of a flashcard. No "i.e.", no "e.g.", no
+parentheses, and nothing after a semicolon. For example, an LLM is "A neural
+network trained on huge amounts of text to generate text", not "...; in essence
+a parameters file plus code that runs it." A definition must contain no
 numbers, sizes, counts, costs or examples from the lecture, and must not define
 a term by a synonym (don't define "parameters" as "weights"); say what it is."""
 

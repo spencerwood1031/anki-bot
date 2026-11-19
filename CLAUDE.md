@@ -30,8 +30,12 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 11. **Every technical word gets two vocab cards.** Any technical word the lecture uses, even a general one it doesn't explain (GPU, zip file, neural network, compile, binary). Card one: "LLMs: Lossy compression" → its short definition. Card two: "LLMs: " + that definition → "Lossy compression". Write both out as basic cards.
 12. **Vocab is concepts, not names or basics.** No product, model or company names (Llama 2, ChatGPT, Claude), no units of storage (byte, gigabyte), no programming languages (C, Python), and no generic words like "state-of-the-art" or "data type".
 13. **Definitions hold no numbers or trivia.** No sizes, counts, costs or lecture-specific examples ("140 GB for Llama 2 70B"). Never define a term by its synonym (parameters ↔ weights); say what it is.
+14. **Definitions are atomic.** One clause with the core meaning only: no "i.e.", no "e.g.", no parentheses, and nothing after a semicolon. Extra facts belong on their own cards, or nowhere.
 
 ### Examples
 - Bad: "What are the characteristics of the Dead Sea?" (too broad). Good: "Where is the Dead Sea located?" → "On the border between Israel and Jordan."
 - Bad: "Does chicken stock make vegetable dishes taste like chicken?" (yes/no). Good: an open question about how stock changes the flavor of vegetables.
 - Bad: "What does GRE stand for in biochemistry?" Good: "Biochem: GRE" → "glucocorticoid response element."
+- Bad definition: "Neural network trained on huge amounts of text to generate text; in essence a parameters file plus code that runs it." Good: "A neural network trained on huge amounts of text to generate text."
+- Bad definition: "The structure of a neural network, i.e. how its computations are arranged." Good: "The structure of a neural network."
+- Bad definition: "Small program (e.g. in C) that runs the neural network using the parameters." Good: "Small program that runs the neural network using the parameters."
