@@ -33,6 +33,9 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 14. **Definitions are atomic.** One clause with the core meaning only: no "i.e.", no "e.g.", no parentheses, and nothing after a semicolon. Extra facts belong on their own cards, or nowhere.
 15. **Important leftovers get one extra card.** If trimming a definition drops something important that no main-idea card covers, add one question card for it (not another vocab pair). Drop trivia, and drop anything a main-idea card already asks. Example: open-source vs open-weights → "LLMs: What does an open-source model release that an open-weights model doesn't?" → "Its training details and data."
 16. **No near-duplicate terms.** When two terms mean almost the same thing in this lecture (open-source model, open-weights model), keep only the one the lecture leans on.
+17. **Main-idea answers are atomic too.** The shortest answer that is still right: drop secondary clauses and "and how…" add-ons. "In the parameter values", not "In the parameter values and how they are obtained; the architecture is fully understood."
+18. **Ask the general lesson, not the lecture's example.** "How do models improve?" → "By scaling data and compute", not "How do state-of-the-art models get beyond Llama 2?"
+19. **Contrasts name both sides.** "How does training's compression differ from a zip file?" → "Training's compression is lossy; a zip file is lossless."
 
 ### Examples
 - Bad: "What are the characteristics of the Dead Sea?" (too broad). Good: "Where is the Dead Sea located?" → "On the border between Israel and Jordan."
