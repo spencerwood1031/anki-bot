@@ -23,5 +23,21 @@ Compares `outputs/<video_id>/terms.json` with `golden/<video_id>/jargon.txt`.
 The feedback loop: read the missed and extra lists, change `TERMS_SYSTEM` in
 `ankibot/prompts.py`, re-run both commands, and see if the scores go up.
 
-## Later
-Card quality against `cards.md`, once the critic pass exists.
+## eval_cards.py
+```bash
+python make_deck.py <url>
+python evals/eval_cards.py <video_id>
+python evals/eval_cards.py <video_id> --until 3600   # only cards from the first hour
+```
+Compares `outputs/<video_id>/cards.json` with `golden/<video_id>/cards.md`
+(one card per blank-line-separated block; lines starting with `#` are ignored).
+
+- Recall = your cards the tool has a matching card for / all your cards
+- Precision = tool cards that match one of yours / all tool cards
+- Rule pass = tool cards that break none of the 10 card rules / all tool cards
+- Claude judges which cards test the same knowledge, and which rules each card breaks.
+- `--until` is for long videos where you only wrote cards for the first part.
+- Output: the scores, the most-broken rules, your missed cards and each rule-breaking
+  card with reasons, printed and saved to `outputs/<video_id>/eval_cards.json`.
+
+Runs vary, so compare averages of a few runs before trusting a change.

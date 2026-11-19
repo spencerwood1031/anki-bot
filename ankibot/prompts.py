@@ -166,3 +166,48 @@ def match_user(golden_terms, tool_terms) -> str:
 </tool_terms>
 
 For every golden term, give the matching tool term exactly as written, or null if none matches."""
+
+
+# ---- Eval: compare the tool's cards with Spencer's golden cards ----
+
+COVER_SYSTEM = """You grade a flashcard generator against a hand-written answer key.
+For each golden card, list the tool cards that test the same piece of knowledge:
+a student who knows the answer to one would know the answer to the other.
+Wording and format don't matter (a cloze card can match a question card).
+A tool card that only tests part of the golden card, or a broader or narrower
+fact, doesn't count. A tool card may match more than one golden card."""
+
+
+def cover_user(golden_cards, tool_cards) -> str:
+    golden = "\n".join(f"G{n}. {c}" for n, c in enumerate(golden_cards, start=1))
+    tool = "\n".join(f"T{n}. {c['front']} -> {c['back']}" for n, c in enumerate(tool_cards, start=1))
+    return f"""<golden_cards>
+{golden}
+</golden_cards>
+
+<tool_cards>
+{tool}
+</tool_cards>
+
+For every golden card, give its number and the numbers of the tool cards that match it (an empty list if none)."""
+
+
+def grade_system() -> str:
+    return f"""You review Anki flashcards against these rules:
+
+{card_rules()}
+
+Also count these as breaking rule 10: a card whose only job is to define a term,
+expand an abbreviation or recall a bare name (vocabulary has its own deck).
+
+Be strict but fair: only flag a rule the card clearly breaks. For each broken
+rule give a short reason a student would understand."""
+
+
+def grade_user(tool_cards) -> str:
+    tool = "\n".join(f"T{n}. [{c['card_type']}] {c['front']} -> {c['back']}" for n, c in enumerate(tool_cards, start=1))
+    return f"""<cards>
+{tool}
+</cards>
+
+For every card, give its number and the rules it breaks (an empty list if it follows them all)."""
