@@ -31,6 +31,8 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 12. **Vocab is concepts, not names or basics.** No product, model or company names (Llama 2, ChatGPT, Claude), no units of storage (byte, gigabyte), no programming languages (C, Python), and no generic words like "state-of-the-art" or "data type".
 13. **Definitions hold no numbers or trivia.** No sizes, counts, costs or lecture-specific examples ("140 GB for Llama 2 70B"). Never define a term by its synonym (parameters ↔ weights); say what it is.
 14. **Definitions are atomic.** One clause with the core meaning only: no "i.e.", no "e.g.", no parentheses, and nothing after a semicolon. Extra facts belong on their own cards, or nowhere.
+15. **Important leftovers get one extra card.** If trimming a definition drops something important that no main-idea card covers, add one question card for it (not another vocab pair). Drop trivia, and drop anything a main-idea card already asks. Example: open-source vs open-weights → "LLMs: What does an open-source model release that an open-weights model doesn't?" → "Its training details and data."
+16. **No near-duplicate terms.** When two terms mean almost the same thing in this lecture (open-source model, open-weights model), keep only the one the lecture leans on.
 
 ### Examples
 - Bad: "What are the characteristics of the Dead Sea?" (too broad). Good: "Where is the Dead Sea located?" → "On the border between Israel and Jordan."
