@@ -83,13 +83,56 @@
       padding: 10px 12px;
     }
     footer { color: var(--muted); font-size: 14px; margin-top: 24px; }
+
+    /* ---- Review screen ---- */
+    main.wide { max-width: 760px; }
+    .review-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .review-head h2 { font-size: 20px; margin: 0; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    .card-top { display: flex; gap: 8px 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; font-size: 14px; color: var(--muted); }
+    .card-top .spacer { flex: 1; }
+    .card textarea { min-height: 0; margin-bottom: 8px; }
+    select {
+      font: inherit; font-size: 14px; color: inherit;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px;
+    }
+    input.time { width: 72px; padding: 4px 6px; font-size: 14px; }
+    button.small {
+      width: auto; font-size: 14px; font-weight: 500; padding: 6px 10px;
+      background: transparent; color: var(--accent); border: 1px solid var(--border);
+    }
+    button.small.danger { color: var(--error-text); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .suggestion {
+      border-left: 3px solid var(--accent);
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-top: 8px;
+      font-size: 15px;
+    }
+    .suggestion .why { color: var(--muted); margin: 0 0 8px; }
+    .suggestion .s-card { margin: 0 0 8px; }
+    .new-card { border-style: dashed; }
+    .bottom-bar { display: flex; gap: 12px; margin-top: 20px; }
+    .bottom-bar button { flex: 1; }
+    button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--border); }
+    #review-status { margin: 16px 0 0; color: var(--muted); }
+    #review-status.error { color: var(--error-text); background: var(--error-bg); border-radius: 8px; padding: 10px 12px; }
   </style>
 </head>
 <body>
 <main>
   <h1>Anki Bot</h1>
-  <p class="lead">Paste a YouTube lecture and get an Anki deck of flashcards on its key ideas. Each card links back to the moment in the video it came from.</p>
+  <p class="lead">Paste a YouTube lecture and get flashcards on its key ideas. Review and edit them, add your own, then download an Anki deck. Each card links back to the moment in the video it came from.</p>
 
+  <section id="start-view">
   <form id="deck-form">
     <div class="field">
       <label for="url">YouTube link</label>
@@ -102,7 +145,8 @@
       <p class="hint">
         The cards are written by Claude, using your key. Get one at
         <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
-        Your key is used for this one deck and never saved on our side.
+        Your key never reaches our server: your browser sends it straight to Anthropic,
+        and it's forgotten when you close this tab.
       </p>
     </div>
 
@@ -111,72 +155,336 @@
       <textarea id="transcript" placeholder="On YouTube, open the video's description, click &quot;Show transcript&quot;, then select all of it and paste it here."></textarea>
     </details>
 
-    <button id="submit" type="submit">Make my deck</button>
+    <button id="submit" type="submit">Make my cards</button>
     <p id="status" role="status" hidden></p>
   </form>
+  </section>
+
+  <section id="review-view" hidden>
+    <div class="review-head">
+      <h2 id="deck-title"></h2>
+      <span id="card-count" class="hint"></span>
+    </div>
+    <p class="hint">Edit any card, delete the ones you don't want, or add your own. "Suggest a better version" asks Claude to rewrite a card to follow good flashcard rules.</p>
+    <div id="card-list"></div>
+
+    <div class="card new-card">
+      <div class="card-top">
+        <strong>Add your own card</strong>
+        <span class="spacer"></span>
+        <select id="new-type" aria-label="Card type">
+          <option value="basic">Question / answer</option>
+          <option value="cloze">Fill in the blank</option>
+        </select>
+      </div>
+      <textarea id="new-front" rows="2" placeholder="Question (or a sentence with {{c1::the hidden part}} for fill in the blank)"></textarea>
+      <textarea id="new-back" rows="2" placeholder="Answer (optional for fill in the blank)"></textarea>
+      <button id="add-card" class="small" type="button">Add card</button>
+    </div>
+
+    <div class="bottom-bar">
+      <button id="start-over" class="secondary" type="button">Start over</button>
+      <button id="download" type="button">Download deck</button>
+    </div>
+    <p id="review-status" role="status" hidden></p>
+  </section>
 
   <footer>Open the downloaded .apkg file with <a href="https://apps.ankiweb.net" target="_blank" rel="noopener">Anki</a> to import it.</footer>
 </main>
 
 <script>
-  const form = document.getElementById("deck-form");
-  const button = document.getElementById("submit");
-  const statusLine = document.getElementById("status");
+  // ---------------------------------------------------------------
+  // Everything the page knows lives in `deck`. The server keeps
+  // nothing, so the cards exist only here until you download them.
+  // ---------------------------------------------------------------
+  const deck = { videoId: "", title: "", cards: [] };
 
-  function showStatus(text, isError) {
-    statusLine.hidden = false;
-    statusLine.textContent = text;
-    statusLine.className = isError ? "error" : "";
+  // The visitor's API key. It stays in this variable (in memory, never in
+  // browser storage) and is only ever sent to api.anthropic.com, never to
+  // our server. Our server also tells the browser to block any other
+  // destination (the Content-Security-Policy header in app.py).
+  let apiKey = "";
+
+  const $ = (id) => document.getElementById(id);
+
+  function showStatus(element, text, isError) {
+    element.hidden = false;
+    element.textContent = text;
+    element.className = isError ? "error" : "";
   }
 
-  form.addEventListener("submit", async (event) => {
+  // POST some JSON and return the parsed reply, or throw with the server's message.
+  async function postJson(path, body) {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      let message = "Something went wrong. Please try again.";
+      try { message = (await response.json()).error || message; } catch (e) {}
+      throw new Error(message);
+    }
+    return response;
+  }
+
+  // ---------------- Talking to Claude, straight from the browser ----------------
+
+  function anthropicHeaders() {
+    return {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      // Anthropic asks browser apps to send this, to confirm the key belongs to the person using the page.
+      "anthropic-dangerous-direct-browser-access": "true",
+      "content-type": "application/json",
+    };
+  }
+
+  // Turn a failed Claude response into a message the visitor can act on.
+  async function claudeError(response) {
+    let detail = "";
+    try { detail = (await response.json()).error.message; } catch (e) {}
+    if (response.status === 401) return new Error("That API key didn't work. Check it at console.anthropic.com.");
+    if (response.status === 403) return new Error("That API key isn't allowed to use Claude. Check it at console.anthropic.com.");
+    if (response.status === 429) return new Error("Your API key hit its rate limit. Wait a minute and try again.");
+    if (response.status === 529) return new Error("Claude is overloaded right now. Try again in a minute.");
+    return new Error(`Claude returned an error: ${detail || response.status}`);
+  }
+
+  async function fetchClaude(path, options) {
+    try {
+      return await fetch(`https://api.anthropic.com${path}`, { ...options, headers: anthropicHeaders() });
+    } catch (e) {
+      throw new Error("Couldn't reach Claude. Check your internet connection and try again.");
+    }
+  }
+
+  // A free call (listing models) to see whether the key works before doing real work.
+  async function checkKey() {
+    const response = await fetchClaude("/v1/models?limit=1", { method: "GET" });
+    if (!response.ok) throw await claudeError(response);
+  }
+
+  // One Claude step: our server builds the request (prompts live in Python),
+  // the browser adds the key and sends it to Claude, and we read back the JSON.
+  async function askClaude(step, inputs) {
+    const body = await (await postJson("/api/claude-request", { step, ...inputs })).json();
+    const response = await fetchClaude("/v1/messages", { method: "POST", body: JSON.stringify(body) });
+    if (!response.ok) throw await claudeError(response);
+    const message = await response.json();
+    if (message.stop_reason === "refusal") throw new Error("Claude declined this request.");
+    return JSON.parse(message.content.find((block) => block.type === "text").text);
+  }
+
+  // 95 -> "1:35", and back.
+  const formatTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  function parseTime(text) {
+    const parts = text.trim().split(":").map(Number);
+    if (parts.some(isNaN)) return 0;
+    return parts.reduce((total, part) => total * 60 + part, 0);
+  }
+
+  // A small helper for building elements: el("button", {className: "small"}, "Delete")
+  function el(tag, props = {}, ...children) {
+    const element = Object.assign(document.createElement(tag), props);
+    element.append(...children);
+    return element;
+  }
+
+  // ---------------- Step 1: make the cards ----------------
+
+  $("deck-form").addEventListener("submit", async (event) => {
     event.preventDefault();
+    const button = $("submit");
     button.disabled = true;
 
     // A ticking clock, so a 1-3 minute wait doesn't look frozen.
+    let stage = "Checking your API key";
     const started = Date.now();
     const tick = () => {
       const seconds = Math.round((Date.now() - started) / 1000);
-      showStatus(`Reading the lecture and writing cards... ${seconds}s (usually 1 to 3 minutes)`, false);
+      showStatus($("status"), `${stage}... ${seconds}s (usually 1 to 3 minutes in total)`, false);
     };
     tick();
     const timer = setInterval(tick, 1000);
 
     try {
-      const response = await fetch("/api/deck", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: document.getElementById("url").value,
-          api_key: document.getElementById("api-key").value,
-          transcript: document.getElementById("transcript").value,
-        }),
+      apiKey = $("api-key").value.trim();
+      if (!apiKey) throw new Error("Paste your Anthropic API key.");
+      await checkKey();  // fail fast on a bad key
+
+      stage = "Getting the transcript";
+      const lecture = await (await postJson("/api/transcript", {
+        url: $("url").value,
+        transcript: $("transcript").value,
+      })).json();
+      const transcript_text = lecture.transcript_text;
+
+      stage = "Finding the technical terms (1 of 3)";
+      const { terms } = await askClaude("terms", { transcript_text });
+      stage = "Picking the key ideas (2 of 3)";
+      const { ideas } = await askClaude("ideas", { transcript_text, terms });
+      stage = "Writing the cards (3 of 3)";
+      const { cards } = await askClaude("cards", { transcript_text, terms, ideas });
+
+      deck.videoId = lecture.video_id;
+      deck.title = lecture.title;
+      deck.cards = cards;
+      $("status").hidden = true;
+      showReview();
+    } catch (error) {
+      showStatus($("status"), error.message, true);
+    } finally {
+      clearInterval(timer);
+      button.disabled = false;
+    }
+  });
+
+  // ---------------- Step 2: review the cards ----------------
+
+  function showReview() {
+    $("start-view").hidden = true;
+    $("review-view").hidden = false;
+    document.querySelector("main").classList.add("wide");
+    $("deck-title").textContent = deck.title;
+    renderCards();
+    window.scrollTo(0, 0);
+  }
+
+  function renderCards() {
+    const list = $("card-list");
+    list.replaceChildren(...deck.cards.map(renderCard));
+    $("card-count").textContent = `${deck.cards.length} cards`;
+  }
+
+  function renderCard(card, index) {
+    const typeSelect = el("select", { ariaLabel: "Card type" },
+      el("option", { value: "basic", textContent: "Question / answer" }),
+      el("option", { value: "cloze", textContent: "Fill in the blank" }));
+    typeSelect.value = card.card_type;
+    typeSelect.onchange = () => { card.card_type = typeSelect.value; };
+
+    const time = el("input", { className: "time", value: formatTime(card.start_seconds || 0), ariaLabel: "Time in video" });
+    time.onchange = () => { card.start_seconds = parseTime(time.value); renderCards(); };
+    const watch = el("a", {
+      href: `https://youtu.be/${deck.videoId}?t=${card.start_seconds || 0}`,
+      target: "_blank", rel: "noopener", textContent: "Watch",
+    });
+
+    const suggestButton = el("button", { className: "small", type: "button",
+      textContent: card.loading ? "Thinking..." : "Suggest a better version", disabled: !!card.loading });
+    suggestButton.onclick = () => suggestFor(card);
+    const deleteButton = el("button", { className: "small danger", type: "button", textContent: "Delete" });
+    deleteButton.onclick = () => { deck.cards.splice(index, 1); renderCards(); };
+
+    const front = el("textarea", { rows: 2, value: card.front, ariaLabel: "Front" });
+    front.oninput = () => { card.front = front.value; };
+    const back = el("textarea", { rows: 2, value: card.back, ariaLabel: "Back",
+      placeholder: card.card_type === "cloze" ? "Extra context (optional)" : "Answer" });
+    back.oninput = () => { card.back = back.value; };
+
+    return el("div", { className: "card" },
+      el("div", { className: "card-top" },
+        el("span", { textContent: `#${index + 1}` }), typeSelect, time, watch,
+        el("span", { className: "spacer" }), suggestButton, deleteButton),
+      front, back,
+      card.error ? el("p", { className: "hint", textContent: card.error }) : "",
+      card.suggestion ? renderSuggestion(card, index) : "");
+  }
+
+  // Claude's suggested rewrite, shown under the card, with "Use this" / "Keep mine".
+  function renderSuggestion(card, index) {
+    const s = card.suggestion;
+    const unchanged = s.cards.length === 1 &&
+      s.cards[0].front === card.front && s.cards[0].back === card.back;
+
+    const useButton = el("button", { className: "small", type: "button",
+      textContent: s.cards.length > 1 ? `Use these ${s.cards.length} cards` : "Use this" });
+    useButton.onclick = () => {
+      // Replace the card with the suggestion (it may split into several cards).
+      const replacements = s.cards.map((c) => ({ ...c, start_seconds: card.start_seconds }));
+      deck.cards.splice(index, 1, ...replacements);
+      renderCards();
+    };
+    const keepButton = el("button", { className: "small", type: "button",
+      textContent: unchanged ? "OK" : "Keep mine" });
+    keepButton.onclick = () => { delete card.suggestion; renderCards(); };
+
+    return el("div", { className: "suggestion" },
+      el("p", { className: "why", textContent: s.why }),
+      ...(unchanged ? [] : s.cards.map((c) => el("p", { className: "s-card" },
+        el("b", { textContent: "Front: " }), c.front, el("br"),
+        el("b", { textContent: "Back: " }), c.back || "(empty)"))),
+      el("div", { className: "row" }, ...(unchanged ? [] : [useButton]), keepButton));
+  }
+
+  async function suggestFor(card) {
+    card.loading = true;
+    delete card.error;
+    renderCards();
+    try {
+      card.suggestion = await askClaude("suggest", {
+        title: deck.title,
+        card: { card_type: card.card_type, front: card.front, back: card.back },
       });
+    } catch (error) {
+      card.error = error.message;
+    } finally {
+      card.loading = false;
+      renderCards();
+    }
+  }
 
-      if (!response.ok) {
-        let message = "Something went wrong. Please try again.";
-        try { message = (await response.json()).error || message; } catch (e) {}
-        throw new Error(message);
-      }
+  // Adding your own card also asks Claude for a better version right away.
+  $("add-card").addEventListener("click", () => {
+    const front = $("new-front").value.trim();
+    if (!front) { $("new-front").focus(); return; }
+    const card = { card_type: $("new-type").value, front, back: $("new-back").value.trim(), start_seconds: 0 };
+    deck.cards.push(card);
+    $("new-front").value = "";
+    $("new-back").value = "";
+    suggestFor(card);
+  });
 
-      // The server sends the .apkg file. Save it under the name it suggests.
+  // ---------------- Step 3: download ----------------
+
+  $("download").addEventListener("click", async () => {
+    const button = $("download");
+    button.disabled = true;
+    try {
+      const response = await postJson("/api/download", {
+        video_id: deck.videoId,
+        title: deck.title,
+        cards: deck.cards.map(({ card_type, front, back, start_seconds }) =>
+          ({ card_type, front, back, start_seconds })),
+      });
       const blob = await response.blob();
       const header = response.headers.get("Content-Disposition") || "";
       const match = header.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
       const filename = match ? decodeURIComponent(match[1]) : "deck.apkg";
 
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
+      const link = el("a", { href: URL.createObjectURL(blob), download: filename });
       link.click();
       URL.revokeObjectURL(link.href);
-      showStatus(`Done! ${filename} is downloading.`, false);
+      showStatus($("review-status"), `Done! ${filename} is downloading.`, false);
     } catch (error) {
-      showStatus(error.message, true);
+      showStatus($("review-status"), error.message, true);
     } finally {
-      clearInterval(timer);
       button.disabled = false;
     }
+  });
+
+  $("start-over").addEventListener("click", () => {
+    if (!confirm("Start over? Your edits to these cards will be lost.")) return;
+    deck.cards = [];
+    $("review-view").hidden = true;
+    $("start-view").hidden = false;
+    document.querySelector("main").classList.remove("wide");
+  });
+
+  // Don't lose edited cards to an accidental refresh or tab close.
+  window.addEventListener("beforeunload", (event) => {
+    if (deck.cards.length) event.preventDefault();
   });
 </script>
 </body>

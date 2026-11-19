@@ -7,8 +7,9 @@ Pipeline: YouTube URL → timestamped transcript → technical terms → 5–15 
 - Spencer is learning to build with AI: explain choices as you go, and check in before major decisions.
 - Keep code simple and readable over clever.
 - Never write or edit anything in `golden/`. Those files are Spencer's hand-written ground truth.
-- Phase 1 only for now. The critic pass, frame captures and review screen come later.
+- The pipeline is Phase 1 (no critic pass or frame captures yet). The website (`app.py`, `templates/index.html`, hosted on Render) has a review screen where visitors edit, delete and add cards before downloading.
 - The `## Card rules` section below is also sent to Claude in the card-drafting prompt (`ankibot/prompts.py` reads it), so edit the rules there and only there.
+- Website: visitors' API keys must never reach our server. The browser calls Claude directly; the server only builds requests (`llm.browser_request`). Never add a server endpoint that takes a key, and never log or store one. `tests/test_key_privacy.py` guards this.
 - Two passes: `make_deck.py <url> --terms` makes only the vocab list; the full run writes conceptual cards (no plain vocab cards).
 - Evals: `evals/eval_terms.py <id>` compares `outputs/<id>/terms.json` against `golden/<id>/jargon.txt` (recall and precision, with Claude judging whether two terms match).
 

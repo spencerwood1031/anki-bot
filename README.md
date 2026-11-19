@@ -23,7 +23,9 @@ python make_deck.py https://youtu.be/aircAruvnKk           # 2. full run: key id
 Results land in `outputs/<video_id>/`: `transcript.json`, `terms.json`, `ideas.json`, `cards.json` and `deck.apkg`. Double-click the `.apkg` to import it into Anki. The transcript is fetched once and reused after that.
 
 ## Website
-`app.py` is a small Flask website: visitors paste a YouTube link and their own Anthropic API key and download a deck. If YouTube won't give up the transcript, they can paste it from YouTube's "Show transcript" panel instead.
+`app.py` is a small Flask website: visitors paste a YouTube link and their own Anthropic API key, then review the cards (edit, delete, add their own, and ask Claude to suggest a better version of any card) before downloading the deck. If YouTube won't give up the transcript, they can paste it from YouTube's "Show transcript" panel instead.
+
+Visitors' API keys never touch the server: the page calls Claude straight from the browser, and the server only fetches transcripts, builds the Claude requests from the same prompts as `make_deck.py`, and packages the deck. `python -m unittest discover tests` checks this still holds.
 
 Try it on your computer:
 ```bash

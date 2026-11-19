@@ -10,7 +10,8 @@ import os
 from typing import Literal
 
 import anthropic
-from pydantic import BaseModel
+from anthropic.lib._parse._transform import transform_schema
+from pydantic import BaseModel, TypeAdapter
 
 from ankibot import prompts
 
@@ -67,6 +68,17 @@ class CardList(BaseModel):
     cards: list[Card]
 
 
+class SuggestedCard(BaseModel):
+    card_type: Literal["basic", "cloze"]
+    front: str
+    back: str
+
+
+class Suggestion(BaseModel):
+    why: str                     # one or two sentences: which rules the rewrite fixes
+    cards: list[SuggestedCard]   # usually one; more if the original held several ideas
+
+
 class TermMatch(BaseModel):
     golden_term: str
     tool_term: str | None  # None when the tool missed this golden term
@@ -120,6 +132,47 @@ def draft_cards(client: anthropic.Anthropic, transcript_text: str, ideas: list[I
         CardList,
     )
     return result.cards
+
+
+# ---- Website: the browser makes the Claude calls ----
+#
+# On the website, visitors' API keys must never reach our server. So the
+# server only *builds* each request (the same prompts as above), and the
+# visitor's browser sends it to Claude with their key. These functions
+# return the raw request body for Claude's Messages API.
+
+def request_body(system: str, user: str, output_shape: type[BaseModel]) -> dict:
+    """The same request _ask sends, as plain JSON the browser can post to Claude."""
+    schema = transform_schema(TypeAdapter(output_shape).json_schema())
+    return {
+        "model": MODEL,
+        "max_tokens": 16000,
+        "system": system,
+        "messages": [{"role": "user", "content": user}],
+        "output_config": {"format": {"type": "json_schema", "schema": schema}},
+    }
+
+
+def browser_request(step: str, data: dict) -> dict:
+    """Build the request for one website step. `data` is what the page sent."""
+    if step == "terms":
+        return request_body(prompts.TERMS_SYSTEM, prompts.terms_user(data["transcript_text"]), TermList)
+
+    if step == "ideas":
+        terms = TermList(terms=data["terms"]).terms
+        return request_body(prompts.IDEAS_SYSTEM, prompts.ideas_user(data["transcript_text"], terms), IdeaList)
+
+    if step == "cards":
+        terms = TermList(terms=data["terms"]).terms
+        ideas = IdeaList(ideas=data["ideas"]).ideas
+        user = prompts.cards_user(data["transcript_text"], ideas, terms)
+        return request_body(prompts.cards_system(), user, CardList)
+
+    if step == "suggest":
+        card = SuggestedCard(**data["card"])
+        return request_body(prompts.suggest_system(), prompts.suggest_user(card, data["title"]), Suggestion)
+
+    raise ValueError(f"Unknown step: {step}")
 
 
 # ---- Eval call ----
