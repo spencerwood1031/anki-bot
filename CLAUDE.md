@@ -34,7 +34,7 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 15. **Important leftovers get one extra card.** If trimming a definition drops something important that no main-idea card covers, add one question card for it (not another vocab pair). Drop trivia, and drop anything a main-idea card already asks. Example: open-source vs open-weights → "LLMs: What does an open-source model release that an open-weights model doesn't?" → "Its training details and data."
 16. **No near-duplicate terms.** When two terms mean almost the same thing in this lecture (open-source model, open-weights model), keep only the one the lecture leans on.
 17. **Main-idea answers are atomic too.** The shortest answer that is still right: drop secondary clauses and "and how…" add-ons. "In the parameter values", not "In the parameter values and how they are obtained; the architecture is fully understood."
-18. **Ask the general lesson, not the lecture's example.** "How do models improve?" → "By scaling data and compute", not "How do state-of-the-art models get beyond Llama 2?"
+18. **Ask the general lesson, not the lecture's example.** "How do models improve?" → "By scaling data and compute", not "How do state-of-the-art models get beyond Llama 2?" But keep the lecture's analogies: they make an idea easier to digest and remember. Ask about the analogy itself, not who said it: "How can we picture the result of training?" → "A zip file of the internet", not "What analogy does Karpathy use?"
 19. **Contrasts name both sides.** "How does training's compression differ from a zip file?" → "Training's compression is lossy; a zip file is lossless."
 
 ### Examples
