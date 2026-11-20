@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Anki Bot · Spencer Wood</title>
+  <title>Anki Bot – Beta · Spencer Wood</title>
   <meta name="description" content="Turn a YouTube lecture into an Anki deck.">
   <link rel="icon" href="https://spencerjwood.com/favicon.ico" sizes="any">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -81,7 +81,7 @@
     .field { margin-bottom: 26px; }
     details { margin-bottom: 28px; }
     summary { cursor: pointer; font-size: 14px; font-style: italic; }
-    details textarea { margin-top: 12px; min-height: 140px; border: 1px solid var(--faint); border-bottom-width: 2px; padding: 8px; }
+    details textarea { margin-top: 12px; field-sizing: fixed; height: 200px; min-height: 0; resize: none; overflow-y: auto; border: 1px solid var(--faint); border-bottom-width: 2px; padding: 8px; }
 
     /* ---- Buttons: square, red outline, fill red on hover ---- */
     button {
@@ -152,16 +152,16 @@
     </header>
     <nav>
       <a href="https://spencerjwood.com/#about">About</a>
+      <a href="/" class="active" aria-current="page">Anki Bot – Beta</a>
       <a href="https://spencerjwood.com/#articles">Articles</a>
       <a href="https://spencerjwood.com/#books">Bookshelf</a>
       <a href="https://spencerjwood.com/#photography">Photography</a>
       <a href="https://spencerjwood.com/#quotes">Commonplace Book</a>
-      <a href="/" class="active" aria-current="page">Anki Bot</a>
     </nav>
   </aside>
 
 <main>
-  <h2 class="title">Anki Bot</h2>
+  <h2 class="title">Anki Bot – Beta</h2>
   <p class="sub">Turn a YouTube lecture into flashcards on its key ideas. Review and edit them, add your own, then download an Anki deck. Each card links back to the moment in the video it came from.</p>
 
   <section id="start-view">
