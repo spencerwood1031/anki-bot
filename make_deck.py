@@ -64,8 +64,11 @@ def main(url: str, terms_only: bool = False) -> None:
     print("5/5 Checking the draft against the card rules...")
     review = llm.review_deck(client, transcript_text, terms, cards)
     save_json(out_dir / "review.json", review.model_dump())
-    for change in review.changes:
-        print(f"  - {change}")
+    for item in [*review.terms, *review.cards]:
+        if item.note:
+            print(f"  - {item.note}")
+    for line in review.cut:
+        print(f"  - Cut: {line}")
     terms, cards = review.terms, review.cards
     save_json(out_dir / "terms.json", [t.model_dump() for t in terms])  # the checked list
 
