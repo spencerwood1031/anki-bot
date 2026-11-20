@@ -52,7 +52,10 @@ parentheses, and nothing after a semicolon. For example, an LLM is "A neural
 network trained on huge amounts of text to generate text", not "...; in essence
 a parameters file plus code that runs it." A definition must contain no
 numbers, sizes, counts, costs or examples from the lecture, and must not define
-a term by a synonym (don't define "parameters" as "weights"); say what it is."""
+a term by a synonym (don't define "parameters" as "weights"); say what it is.
+
+Also give a topic: a one-to-three word label for the lecture's subject (e.g.
+"LLMs" or "Neural nets"). It goes at the start of every card's front."""
 
 
 def terms_user(transcript_text: str) -> str:
@@ -62,7 +65,8 @@ def terms_user(transcript_text: str) -> str:
 {transcript_text}
 </transcript>
 
-List the technical terms worth a flashcard."""
+List the technical terms worth a flashcard, each with the [seconds] marker
+where it first comes up, and give a short topic label for the lecture."""
 
 
 # ---- Call 2: key ideas ----
@@ -107,22 +111,15 @@ Card formats:
 - "cloze": front is a sentence with the hidden part written as {{{{c1::hidden text}}}},
   back is optional extra context (may be empty).
 
-Write two kinds of cards:
+The two vocab cards for each term in the terms list are made separately, from
+the list itself, so don't write them. You write:
 
-1. Vocab cards (kind "vocab"): for EVERY term in the terms list, write two basic
-   cards, in the order of the list:
-   - front "<topic>: <term>", back: its short definition.
-   - front "<topic>: <short definition>", back: the term.
-   <topic> is a short label for the lecture's subject (e.g. "LLMs"), the same on
-   every card. start_seconds is where the term first comes up.
-
-   If a definition had to leave out something important that no main-idea
-   card will cover, add one extra basic question card (kind "vocab") for it.
-   Never for trivia, and never for something a main-idea card already asks.
-
-2. Main-idea cards (kind "idea"): usually one card per key idea, walking
-   through the lecture's main line of reasoning. Only split an idea into two
-   cards when it won't fit one short answer. Don't repeat the vocab cards.
+1. Main-idea cards: usually one card per key idea, walking through the
+   lecture's main line of reasoning. Only split an idea into two cards when it
+   won't fit one short answer.
+2. Leftover cards (rule 15): if a term's short definition leaves out something
+   important that no main-idea card covers, one question card for it. Never for
+   trivia, and never for something a main-idea card already asks.
 
 Each card's start_seconds is the [seconds] marker where the lecture explains it."""
 
@@ -136,8 +133,8 @@ def cards_user(transcript_text: str, ideas, terms) -> str:
 {_format_terms(terms)}
 </terms>
 
-Write two vocab cards for every term above, then main-idea cards for these
-key ideas, using the transcript for the details:
+Write the main-idea cards for these key ideas (plus any leftover cards for
+the terms above), using the transcript for the details:
 <ideas>
 {_format_ideas(ideas)}
 </ideas>"""

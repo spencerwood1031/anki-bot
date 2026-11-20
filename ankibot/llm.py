@@ -40,10 +40,12 @@ def make_client(api_key: str | None = None) -> anthropic.Anthropic:
 
 class Term(BaseModel):
     term: str
-    definition: str  # one sentence, as used in this lecture
+    definition: str      # one short clause, as used in this lecture
+    start_seconds: int   # where the term first comes up
 
 
 class TermList(BaseModel):
+    topic: str           # short label for the lecture's subject, e.g. "LLMs"
     terms: list[Term]
 
 
@@ -58,7 +60,6 @@ class IdeaList(BaseModel):
 
 
 class Card(BaseModel):
-    kind: Literal["vocab", "idea"]  # a vocab (term) card or a main-idea card
     card_type: Literal["basic", "cloze"]
     front: str           # basic: the question. cloze: text with {{c1::...}}
     back: str            # basic: the answer. cloze: optional extra context
@@ -128,14 +129,14 @@ def _ask(client: anthropic.Anthropic, system: str, user: str, output_shape: type
     return response.parsed_output
 
 
-def extract_terms(client: anthropic.Anthropic, transcript_text: str) -> list[Term]:
-    result = _ask(
+def extract_terms(client: anthropic.Anthropic, transcript_text: str) -> TermList:
+    """The lecture's technical terms, plus a short topic label for the card fronts."""
+    return _ask(
         client,
         prompts.TERMS_SYSTEM,
         prompts.terms_user(transcript_text),
         TermList,
     )
-    return result.terms
 
 
 def pick_ideas(client: anthropic.Anthropic, transcript_text: str, terms: list[Term]) -> list[Idea]:
@@ -149,13 +150,37 @@ def pick_ideas(client: anthropic.Anthropic, transcript_text: str, terms: list[Te
 
 
 def draft_cards(client: anthropic.Anthropic, transcript_text: str, ideas: list[Idea], terms: list[Term]) -> list[Card]:
-    result = _ask(
-        client,
-        prompts.cards_system(),
-        prompts.cards_user(transcript_text, ideas, terms),
-        CardList,
-    )
-    return result.cards
+    """The main-idea cards. (Vocab cards are built from the terms in code: see vocab_cards.)
+
+    Now and then Claude answers with one blank card instead of a real list,
+    so we check the answer and ask once more before giving up.
+    """
+    for attempt in range(2):
+        result = _ask(
+            client,
+            prompts.cards_system(),
+            prompts.cards_user(transcript_text, ideas, terms),
+            CardList,
+        )
+        if not cards_look_blank(result.cards):
+            return result.cards
+    raise RuntimeError("Claude returned blank cards twice. Please try again.")
+
+
+def cards_look_blank(cards: list[Card]) -> bool:
+    """True if there are no cards, or any card has an empty front."""
+    return not cards or any(not card.front.strip() for card in cards)
+
+
+def vocab_cards(terms: list[Term], topic: str) -> list[dict]:
+    """Two cards per term, built in code so none get skipped:
+    "LLMs: Lossy compression" -> definition, and "LLMs: <definition>" -> term."""
+    cards = []
+    for t in terms:
+        for front, back in [(t.term, t.definition), (t.definition, t.term)]:
+            cards.append({"kind": "vocab", "card_type": "basic", "front": f"{topic}: {front}",
+                          "back": back, "start_seconds": t.start_seconds})
+    return cards
 
 
 # ---- Website: the browser makes the Claude calls ----
@@ -183,11 +208,11 @@ def browser_request(step: str, data: dict) -> dict:
         return request_body(prompts.TERMS_SYSTEM, prompts.terms_user(data["transcript_text"]), TermList)
 
     if step == "ideas":
-        terms = TermList(terms=data["terms"]).terms
+        terms = [Term(**t) for t in data["terms"]]
         return request_body(prompts.IDEAS_SYSTEM, prompts.ideas_user(data["transcript_text"], terms), IdeaList)
 
     if step == "cards":
-        terms = TermList(terms=data["terms"]).terms
+        terms = [Term(**t) for t in data["terms"]]
         ideas = IdeaList(ideas=data["ideas"]).ideas
         user = prompts.cards_user(data["transcript_text"], ideas, terms)
         return request_body(prompts.cards_system(), user, CardList)
