@@ -46,9 +46,10 @@ SECURITY_HEADERS = {
     "Content-Security-Policy": (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "  # Libre Franklin, as on spencerjwood.com
+        "font-src https://fonts.gstatic.com; "
         "connect-src 'self' https://api.anthropic.com; "
-        "img-src 'self' data:; "
+        "img-src 'self' data: https://spencerjwood.com; "  # the favicon
         "base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
     ),
     "Referrer-Policy": "no-referrer",
