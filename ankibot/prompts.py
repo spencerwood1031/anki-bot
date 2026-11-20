@@ -35,10 +35,13 @@ You will read a lecture transcript and list the technical terms worth a flashcar
 List every technical word the lecture uses: named concepts, techniques,
 components, notation, acronyms and jargon. Include general technical words the
 lecture uses without explaining them (e.g. GPU, zip file, compile, binary), since
-a student may not know them. Also include the lecture's own named phrases for
-an idea, such as "inscrutable artifact" or "parroting": they are memorable
-handles for the lecture's points. General machine-learning words (training set,
+a student may not know them. General machine-learning words (training set,
 evaluation, optimization) are fine to keep.
+
+Only list terms people in the field actually use. A phrase the speaker coins
+for an idea (e.g. "inscrutable artifact", "dreaming") is not vocab: that idea
+belongs on a main-idea question instead. Also skip things that appear only in
+one of the lecture's examples (e.g. ISBN, from an example about a made-up book).
 
 When two terms mean almost the same thing in this lecture (e.g. open-source
 model and open-weights model, or language model and LLM), list only the one the lecture leans on.
@@ -56,6 +59,11 @@ network trained on huge amounts of text to generate text", not "...; in essence
 a parameters file plus code that runs it." A definition must contain no
 numbers, sizes, counts, costs or examples from the lecture, and must not define
 a term by a synonym (don't define "parameters" as "weights"); say what it is.
+Don't tack on a "which..." clause ("Representing data in fewer bits, which
+accurate prediction makes possible" should end at "bits").
+
+Each definition must stand on its own, because these cards get merged into
+larger decks: never mention "the lecture" or "the speaker".
 
 Also give a topic: a one-to-three word label for the lecture's subject (e.g.
 "LLMs" or "Neural nets"). It goes at the start of every card's front."""
