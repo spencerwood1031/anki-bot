@@ -189,8 +189,11 @@ Work through the draft one rule at a time, then look across the whole deck:
 
 Leave everything that already follows the rules exactly as it is: don't
 reword good cards. Keep each item's start_seconds unless you add a new card.
-Return the whole fixed list of terms and the whole fixed list of cards, and a
-short note for each change (what changed and which rule it fixes)."""
+Return the whole fixed list of terms and the whole fixed list of cards. Give
+every term and card a note: "" if you left it unchanged, otherwise one short
+sentence on what you changed and which rule it fixes (start with "Added:" for a
+card you added). List everything you cut in `cut`, one short line each naming
+the term or card and the rule."""
 
 
 def critic_user(transcript_text: str, terms, cards) -> str:

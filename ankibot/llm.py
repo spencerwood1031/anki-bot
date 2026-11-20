@@ -73,10 +73,18 @@ class CardList(BaseModel):
     cards: list[Card]
 
 
+class ReviewedTerm(Term):
+    note: str            # "" if unchanged, else what changed and which rule
+
+
+class ReviewedCard(Card):
+    note: str            # "" if unchanged, else what changed and which rule
+
+
 class Review(BaseModel):
-    changes: list[str]   # one short note per change: what and which rule
-    terms: list[Term]    # the whole fixed term list
-    cards: list[Card]    # the whole fixed list of main-idea cards
+    terms: list[ReviewedTerm]   # the whole fixed term list
+    cards: list[ReviewedCard]   # the whole fixed list of main-idea cards
+    cut: list[str]              # one line per cut term or card, naming the rule
 
 
 class SuggestedCard(BaseModel):
@@ -182,7 +190,11 @@ def review_deck(client: anthropic.Anthropic, transcript_text: str, terms: list[T
     returns fixed terms and cards. If the answer looks broken, keep the draft."""
     review = _ask(client, prompts.critic_system(), prompts.critic_user(transcript_text, terms, cards), Review)
     if review_looks_broken(review, terms, cards):
-        return Review(changes=["The check came back broken, so the draft was kept."], terms=terms, cards=cards)
+        return Review(
+            terms=[ReviewedTerm(**t.model_dump(), note="") for t in terms],
+            cards=[ReviewedCard(**c.model_dump(), note="") for c in cards],
+            cut=["The rules check came back broken, so the draft was kept."],
+        )
     return review
 
 
@@ -211,12 +223,14 @@ def cards_look_blank(cards: list[Card], idea_count: int) -> bool:
 
 def vocab_cards(terms: list[Term], topic: str) -> list[dict]:
     """Two cards per term, built in code so none get skipped:
-    "LLMs: Lossy compression" -> definition, and "LLMs: <definition>" -> term."""
+    "LLMs: Lossy compression" -> definition, and "LLMs: <definition>" -> term.
+    A rules-check note on the term (see review_deck) goes on its first card."""
     cards = []
     for t in terms:
         for front, back in [(t.term, t.definition), (t.definition, t.term)]:
             cards.append({"kind": "vocab", "card_type": "basic", "front": f"{topic}: {front}",
                           "back": back, "start_seconds": t.start_seconds})
+        cards[-2]["note"] = getattr(t, "note", "")
     return cards
 
 

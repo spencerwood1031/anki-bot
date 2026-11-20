@@ -198,6 +198,7 @@
       <span id="card-count" class="count"></span>
     </div>
     <p class="hint">Edit any card, delete the ones you don't want, or add your own. "Suggest a better version" asks Claude to rewrite a card to follow good flashcard rules.</p>
+    <div id="critic-cuts" class="hint" hidden></div>
     <p id="no-times" class="hint" hidden>The pasted transcript had no timestamps, so the cards can't link to the right moment in the video. Paste it with its timestamps for working links, or type a time on any card.</p>
     <div id="card-list"></div>
 
@@ -324,10 +325,10 @@
   // ankibot/llm.py: if the answer looks broken, keep the draft.
   async function reviewDeck(draft) {
     const review = await askClaude("review", draft);
-    console.log("Changes from the rules check:", review.changes);
     const broken = review.terms.length < Math.floor(draft.terms.length / 2)
       || cardsLookBlank(review.cards, draft.cards.length);
-    return broken ? draft : review;
+    if (broken) return { ...draft, cut: ["The rules check came back broken, so the draft was kept."] };
+    return review;
   }
 
   // Same check as cards_look_blank in ankibot/llm.py: did Claude give up?
@@ -389,7 +390,7 @@
       stage = "Writing the cards (3 of 4)";
       const draftCards = await askForCards({ transcript_text, terms: draftTerms, ideas });
       stage = "Checking the cards against the rules (4 of 4)";
-      const { terms, cards } = await reviewDeck({ transcript_text, terms: draftTerms, cards: draftCards });
+      const { terms, cards, cut } = await reviewDeck({ transcript_text, terms: draftTerms, cards: draftCards });
       // Two vocab cards per term, built by our server from the terms list.
       const vocab = (await (await postJson("/api/vocab-cards", { topic, terms })).json()).cards;
 
@@ -397,6 +398,7 @@
       deck.title = lecture.title;
       deck.hasTimestamps = lecture.has_timestamps;
       deck.cards = [...vocab, ...cards];
+      deck.cut = cut;
       $("status").hidden = true;
       showReview();
     } catch (error) {
@@ -415,6 +417,10 @@
     document.querySelector("main").classList.add("wide");
     $("deck-title").textContent = deck.title;
     $("no-times").hidden = deck.hasTimestamps;
+    // For now, while we tune the rules check: show what it cut.
+    $("critic-cuts").hidden = !deck.cut.length;
+    $("critic-cuts").replaceChildren("Rules check cut:",
+      el("ul", {}, ...deck.cut.map((line) => el("li", { textContent: line }))));
     renderCards();
     window.scrollTo(0, 0);
   }
@@ -564,6 +570,7 @@
         card.start_seconds > 0 || deck.hasTimestamps ? watch : "",
         el("span", { className: "spacer" }), suggestButton, deleteButton),
       ...editorFields(card),
+      card.note ? el("p", { className: "hint", textContent: `Rules check: ${card.note}` }) : "",
       card.error ? el("p", { className: "error-note", textContent: card.error }) : "",
       card.suggestion ? renderSuggestion(card, index) : "");
   }
