@@ -73,6 +73,12 @@ class CardList(BaseModel):
     cards: list[Card]
 
 
+class Review(BaseModel):
+    changes: list[str]   # one short note per change: what and which rule
+    terms: list[Term]    # the whole fixed term list
+    cards: list[Card]    # the whole fixed list of main-idea cards
+
+
 class SuggestedCard(BaseModel):
     card_type: Literal["basic", "cloze"]
     front: str
@@ -171,6 +177,22 @@ def draft_cards(client: anthropic.Anthropic, transcript_text: str, ideas: list[I
     raise RuntimeError("Claude returned blank cards twice. Please try again.")
 
 
+def review_deck(client: anthropic.Anthropic, transcript_text: str, terms: list[Term], cards: list[Card]) -> Review:
+    """The critic pass: Claude checks the draft against the card rules and
+    returns fixed terms and cards. If the answer looks broken, keep the draft."""
+    review = _ask(client, prompts.critic_system(), prompts.critic_user(transcript_text, terms, cards), Review)
+    if review_looks_broken(review, terms, cards):
+        return Review(changes=["The check came back broken, so the draft was kept."], terms=terms, cards=cards)
+    return review
+
+
+def review_looks_broken(review: Review, terms: list[Term], cards: list[Card]) -> bool:
+    """The critic should trim and fix, not wipe out: losing more than half the
+    terms or cards, or a blank card, means something went wrong."""
+    return (len(review.terms) < len(terms) // 2
+            or cards_look_blank(review.cards, len(cards)))
+
+
 def cards_look_blank(cards: list[Card], idea_count: int) -> bool:
     """True if Claude seems to have given up instead of writing real cards:
     far fewer cards than ideas, an empty question or answer, or a
@@ -231,6 +253,12 @@ def browser_request(step: str, data: dict) -> dict:
         ideas = IdeaList(ideas=data["ideas"]).ideas
         user = prompts.cards_user(data["transcript_text"], ideas, terms)
         return request_body(prompts.cards_system(), user, CardList)
+
+    if step == "review":
+        terms = [Term(**t) for t in data["terms"]]
+        cards = [Card(**c) for c in data["cards"]]
+        user = prompts.critic_user(data["transcript_text"], terms, cards)
+        return request_body(prompts.critic_system(), user, Review)
 
     if step == "suggest":
         card = SuggestedCard(**data["card"])
