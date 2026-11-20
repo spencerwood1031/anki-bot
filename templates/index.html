@@ -73,7 +73,7 @@
     }
     input:focus, textarea:focus, select:focus { border-bottom-color: var(--red); }
     input::placeholder, textarea::placeholder { color: rgba(0, 0, 0, 0.4); }
-    textarea { resize: vertical; line-height: 1.5; }
+    textarea { resize: vertical; line-height: 1.5; field-sizing: content; min-height: 2.6em; }  /* grows with its text */
     select {
       width: auto; cursor: pointer; padding: 4px 22px 4px 0; font-size: 13px;
       background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E") right 4px center / 10px no-repeat;
@@ -243,7 +243,7 @@
   function showStatus(element, text, isError) {
     element.hidden = false;
     element.textContent = text;
-    element.className = isError ? "error" : "";
+    element.className = isError ? "status error" : "status";
   }
 
   // POST some JSON and return the parsed reply, or throw with the server's message.
@@ -399,41 +399,46 @@
   }
 
   // ---------------- Fill-in-the-blank cards ----------------
-  // Anki stores a blank as {{c1::hidden part}}. Visitors never see that code:
-  // they edit a sentence with ___ where the blank goes, plus the hidden part,
-  // and we turn the two back into Anki's format.
+  // Anki stores a blank as {{c1::hidden part}} (a card can have several:
+  // c1, c2...). Visitors never see that code: they edit a sentence with ___
+  // for each blank, plus one box per hidden part, and we turn those back
+  // into Anki's format.
 
   const BLANK = "___";
   const CLOZE = /\{\{c\d+::(.*?)(?:::.*?)?\}\}/g;
 
-  // "Cost about {{c1::$2 million}}." -> { sentence: "Cost about ___.", hidden: "$2 million" }
+  // "Files: {{c1::params}} and {{c2::run}}." -> { sentence: "Files: ___ and ___.", hiddens: ["params", "run"] }
   function clozeParts(front) {
-    let hidden = "";
-    const sentence = front.replace(CLOZE, (match, text) => {
-      if (hidden) return text;  // one blank per card; any extra blanks become plain text
-      hidden = text;
-      return BLANK;
-    });
-    return { sentence, hidden };
+    const hiddens = [];
+    const sentence = front.replace(CLOZE, (match, text) => { hiddens.push(text); return BLANK; });
+    return { sentence, hiddens };
   }
 
-  // The reverse. If there's no ___, the hidden part's first appearance in the
-  // sentence becomes the blank. Returns "" if there's nowhere to put it.
-  function clozeFront(sentence, hidden) {
-    hidden = hidden.trim();
-    if (!hidden) return "";
-    const cloze = () => `{{c1::${hidden}}}`;  // a function, so "$" in the answer stays literal
-    if (sentence.includes(BLANK)) return sentence.replace(BLANK, cloze);
-    if (sentence.includes(hidden)) return sentence.replace(hidden, cloze);
-    return "";
+  // The reverse. Each ___ gets the next hidden part, numbered c1, c2...
+  // With no ___ and one hidden part, its first appearance in the sentence
+  // becomes the blank. Returns "" if the blanks and hidden parts don't line up.
+  function clozeFront(sentence, hiddens) {
+    hiddens = hiddens.map((h) => h.trim());
+    if (!hiddens.length || hiddens.some((h) => !h)) return "";
+    const blanks = sentence.split(BLANK).length - 1;
+    if (blanks === 0 && hiddens.length === 1 && sentence.includes(hiddens[0])) {
+      return sentence.replace(hiddens[0], () => `{{c1::${hiddens[0]}}}`);  // a function, so "$" stays literal
+    }
+    if (blanks !== hiddens.length) return "";
+    let n = 0;
+    return sentence.replaceAll(BLANK, () => { const h = hiddens[n++]; return `{{c${n}::${h}}}`; });
   }
 
-  // A card's front as readable nodes: the sentence with its hidden part highlighted.
+  // A card's front as readable nodes: the sentence with its hidden parts highlighted.
   function readableFront(card) {
     if (card.card_type !== "cloze") return [card.front];
-    const { sentence, hidden } = clozeParts(card.front);
-    const [before, after = ""] = sentence.split(BLANK);
-    return [before, el("span", { className: "blank", textContent: hidden }), after];
+    const { sentence, hiddens } = clozeParts(card.front);
+    const nodes = [];
+    sentence.split(BLANK).forEach((text, i) => {
+      if (i > 0) nodes.push(el("span", { className: "blank", textContent: hiddens[i - 1] }));
+      nodes.push(text);
+    });
+    return nodes;
   }
 
   // The edit boxes for one card (also used by the "Add your own card" form).
@@ -449,22 +454,44 @@
     }
 
     if (card.sentence === undefined) Object.assign(card, clozeParts(card.front));
-    const problem = el("p", { className: "problem", textContent:
-      "Type the hidden part, and either put ___ where it goes or use the same words in the sentence." });
+    if (!card.hiddens.length) card.hiddens = [""];
+    const problem = el("p", { className: "problem" });
+    const hiddenBoxes = el("div");
+
     const update = () => {
-      card.front = clozeFront(card.sentence, card.hidden);
-      problem.hidden = !!card.front || (!card.sentence && !card.hidden);
+      card.front = clozeFront(card.sentence, card.hiddens);
+      const blanks = card.sentence.split(BLANK).length - 1;
+      problem.textContent = blanks > 1 && blanks !== card.hiddens.length
+        ? `The sentence has ${blanks} blanks; fill in a hidden part for each.`
+        : "Type the hidden part, and either put ___ where it goes or use the same words in the sentence.";
+      problem.hidden = !!card.front || (!card.sentence && !card.hiddens.join(""));
     };
+    // One box per ___ in the sentence (at least one).
+    const drawHiddenBoxes = () => {
+      const blanks = Math.max(1, card.sentence.split(BLANK).length - 1);
+      while (card.hiddens.length < blanks) card.hiddens.push("");
+      card.hiddens.length = blanks;
+      hiddenBoxes.replaceChildren(...card.hiddens.flatMap((value, i) => {
+        const input = el("input", { value, placeholder: i === 0 ? "e.g. $2 million" : "" });
+        input.oninput = () => { card.hiddens[i] = input.value; update(); };
+        return box(blanks > 1 ? `Hidden part ${i + 1}` : "Hidden part", input);
+      }));
+    };
+
     const sentence = el("textarea", { rows: 2, value: card.sentence, placeholder: "e.g. Training Llama 2 cost about ___." });
-    sentence.oninput = () => { card.sentence = sentence.value; update(); };
-    const hidden = el("input", { className: "hidden-part", value: card.hidden, placeholder: "e.g. $2 million" });
-    hidden.oninput = () => { card.hidden = hidden.value; update(); };
+    sentence.oninput = () => {
+      const before = card.sentence.split(BLANK).length;
+      card.sentence = sentence.value;
+      if (card.sentence.split(BLANK).length !== before) drawHiddenBoxes();
+      update();
+    };
     const extra = el("textarea", { rows: 1, value: card.back, placeholder: "Optional: shown with the answer" });
     extra.oninput = () => { card.back = extra.value; };
+    drawHiddenBoxes();
     update();
     return [
-      ...box("Sentence (___ marks the blank)", sentence),
-      ...box("Hidden part", hidden), problem,
+      ...box("Sentence (___ marks each blank)", sentence),
+      hiddenBoxes, problem,
       ...box("Extra context", extra),
     ];
   }
@@ -473,13 +500,13 @@
   function changeType(card, newType) {
     if (newType === card.card_type) return;
     if (newType === "cloze") {
-      Object.assign(card, { sentence: card.front, hidden: card.back, back: "" });
-      card.front = clozeFront(card.sentence, card.hidden);
+      Object.assign(card, { sentence: card.front, hiddens: [card.back], back: "" });
+      card.front = clozeFront(card.sentence, card.hiddens);
     } else {
-      const { sentence, hidden } = card.sentence !== undefined ? card : clozeParts(card.front);
-      Object.assign(card, { front: sentence, back: hidden });
+      const { sentence, hiddens } = card.sentence !== undefined ? card : clozeParts(card.front);
+      Object.assign(card, { front: sentence, back: hiddens.join(", ") });
       delete card.sentence;
-      delete card.hidden;
+      delete card.hiddens;
     }
     card.card_type = newType;
   }
@@ -504,19 +531,19 @@
       target: "_blank", rel: "noopener", textContent: "Watch",
     });
 
-    const suggestButton = el("button", { className: "small", type: "button",
+    const suggestButton = el("button", { className: "small-btn", type: "button",
       textContent: card.loading ? "Thinking..." : "Suggest a better version", disabled: !!card.loading });
     suggestButton.onclick = () => suggestFor(card);
-    const deleteButton = el("button", { className: "small danger", type: "button", textContent: "Delete" });
+    const deleteButton = el("button", { className: "small-btn", type: "button", textContent: "Delete" });
     deleteButton.onclick = () => { deck.cards.splice(index, 1); renderCards(); };
 
     return el("div", { className: "card" },
       el("div", { className: "card-top" },
-        el("span", { textContent: `#${index + 1}` }), typeSelect, time,
+        el("span", { className: "num", textContent: `#${index + 1}` }), typeSelect, time,
         card.start_seconds > 0 || deck.hasTimestamps ? watch : "",
         el("span", { className: "spacer" }), suggestButton, deleteButton),
       ...editorFields(card),
-      card.error ? el("p", { className: "hint", textContent: card.error }) : "",
+      card.error ? el("p", { className: "error-note", textContent: card.error }) : "",
       card.suggestion ? renderSuggestion(card, index) : "");
   }
 
@@ -526,7 +553,7 @@
     const unchanged = s.cards.length === 1 &&
       s.cards[0].front === card.front && s.cards[0].back === card.back;
 
-    const useButton = el("button", { className: "small", type: "button",
+    const useButton = el("button", { className: "small-btn", type: "button",
       textContent: s.cards.length > 1 ? `Use these ${s.cards.length} cards` : "Use this" });
     useButton.onclick = () => {
       // Replace the card with the suggestion (it may split into several cards).
@@ -534,7 +561,7 @@
       deck.cards.splice(index, 1, ...replacements);
       renderCards();
     };
-    const keepButton = el("button", { className: "small", type: "button",
+    const keepButton = el("button", { className: "small-btn", type: "button",
       textContent: unchanged ? "OK" : "Keep mine" });
     keepButton.onclick = () => { delete card.suggestion; renderCards(); };
 
