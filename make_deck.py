@@ -34,7 +34,7 @@ def main(url: str, terms_only: bool = False) -> None:
     out_dir = Path("outputs") / video_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    print("1/4 Fetching transcript...")
+    print("1/5 Fetching transcript...")
     transcript_path = out_dir / "transcript.json"
     if transcript_path.exists():
         # Reuse the saved copy: it doesn't change, and YouTube may block repeat fetches.
@@ -45,7 +45,7 @@ def main(url: str, terms_only: bool = False) -> None:
         save_json(transcript_path, segments)
     transcript_text = transcript.format_for_prompt(segments)
 
-    print("2/4 Extracting technical terms...")
+    print("2/5 Extracting technical terms...")
     term_list = llm.extract_terms(client, transcript_text)
     terms = term_list.terms
     save_json(out_dir / "terms.json", [t.model_dump() for t in terms])
@@ -53,13 +53,23 @@ def main(url: str, terms_only: bool = False) -> None:
         print(f"Done: {len(terms)} terms. Score them with: python evals/eval_terms.py {video_id}")
         return
 
-    print("3/4 Picking the key ideas...")
+    print("3/5 Picking the key ideas...")
     ideas = llm.pick_ideas(client, transcript_text, terms)
     save_json(out_dir / "ideas.json", [i.model_dump() for i in ideas])
 
-    print("4/4 Drafting cards...")
-    # Vocab cards come straight from the terms list; Claude writes the idea cards.
+    print("4/5 Drafting cards...")
     cards = llm.draft_cards(client, transcript_text, ideas, terms)
+    save_json(out_dir / "draft_cards.json", [c.model_dump() for c in cards])
+
+    print("5/5 Checking the draft against the card rules...")
+    review = llm.review_deck(client, transcript_text, terms, cards)
+    save_json(out_dir / "review.json", review.model_dump())
+    for change in review.changes:
+        print(f"  - {change}")
+    terms, cards = review.terms, review.cards
+    save_json(out_dir / "terms.json", [t.model_dump() for t in terms])  # the checked list
+
+    # Vocab cards come straight from the terms list; Claude writes the idea cards.
     card_dicts = llm.vocab_cards(terms, term_list.topic)
     card_dicts += [{"kind": "idea", **card.model_dump()} for card in cards]
     for card_dict in card_dicts:

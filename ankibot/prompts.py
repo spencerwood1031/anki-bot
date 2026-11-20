@@ -158,6 +158,60 @@ the terms above), using the transcript for the details:
 </ideas>"""
 
 
+# ---- Call 4: critic pass ----
+#
+# The drafting calls juggle every rule at once and slip on a few. This call
+# only checks: it reads the finished vocab list and cards against the rules
+# and fixes or cuts whatever breaks one.
+
+def critic_system() -> str:
+    return f"""You are a strict editor of Anki flashcards. A first draft of a deck was
+written from a lecture transcript. Check it against these rules and fix it:
+
+{card_rules()}
+
+The draft has two parts:
+- Terms: each term becomes two vocab cards ("Topic: term" -> definition, and
+  "Topic: definition" -> term), built in code. You edit the term list, not
+  those cards.
+- Cards: the main-idea cards (plus any rule-15 leftover cards).
+
+Work through the draft one rule at a time, then look across the whole deck:
+- Terms: cut any term the vocab rules exclude (11, 12, 16), such as a phrase
+  the speaker coined, a word that only appears in one example, or a
+  near-duplicate. Rewrite any definition that breaks rules 13, 14 or 21, and
+  check against the transcript that it means what the lecture means by it.
+- Cards: rewrite any card that breaks a rule, and cut any card that is trivia,
+  off the lecture's main line, or overlaps another card (rule 20; keep the
+  single best one, preferring the one with the lecture's analogy).
+- Only add a card when you cut a coined-phrase term whose idea no card covers
+  yet: then add one conceptual question for it (rule 12).
+
+Leave everything that already follows the rules exactly as it is: don't
+reword good cards. Keep each item's start_seconds unless you add a new card.
+Return the whole fixed list of terms and the whole fixed list of cards, and a
+short note for each change (what changed and which rule it fixes)."""
+
+
+def critic_user(transcript_text: str, terms, cards) -> str:
+    card_lines = "\n".join(
+        f"- [{c.start_seconds}] ({c.card_type}) {c.front} -> {c.back}" for c in cards
+    )
+    return f"""<transcript>
+{transcript_text}
+</transcript>
+
+<terms>
+{_format_terms(terms)}
+</terms>
+
+<cards>
+{card_lines}
+</cards>
+
+Check the draft against the rules and return the fixed terms and cards."""
+
+
 # ---- Website: suggest a better version of a visitor's card ----
 
 def suggest_system() -> str:

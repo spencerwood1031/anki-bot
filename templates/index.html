@@ -319,6 +319,17 @@
     throw new Error("Claude returned blank cards twice. Please try again.");
   }
 
+  // The critic pass: Claude checks the draft against the card rules and
+  // returns fixed terms and cards. Same fallback as review_deck in
+  // ankibot/llm.py: if the answer looks broken, keep the draft.
+  async function reviewDeck(draft) {
+    const review = await askClaude("review", draft);
+    console.log("Changes from the rules check:", review.changes);
+    const broken = review.terms.length < Math.floor(draft.terms.length / 2)
+      || cardsLookBlank(review.cards, draft.cards.length);
+    return broken ? draft : review;
+  }
+
   // Same check as cards_look_blank in ankibot/llm.py: did Claude give up?
   function cardsLookBlank(cards, ideaCount) {
     if (cards.length < Math.max(1, Math.floor(ideaCount / 2))) return true;
@@ -354,7 +365,7 @@
     const started = Date.now();
     const tick = () => {
       const seconds = Math.round((Date.now() - started) / 1000);
-      showStatus($("status"), `${stage}... ${seconds}s (usually 1 to 3 minutes in total)`, false);
+      showStatus($("status"), `${stage}... ${seconds}s (usually 2 to 4 minutes in total)`, false);
     };
     tick();
     const timer = setInterval(tick, 1000);
@@ -371,12 +382,14 @@
       })).json();
       const transcript_text = lecture.transcript_text;
 
-      stage = "Finding the technical terms (1 of 3)";
-      const { terms, topic } = await askClaude("terms", { transcript_text });
-      stage = "Picking the key ideas (2 of 3)";
-      const { ideas } = await askClaude("ideas", { transcript_text, terms });
-      stage = "Writing the cards (3 of 3)";
-      const cards = await askForCards({ transcript_text, terms, ideas });
+      stage = "Finding the technical terms (1 of 4)";
+      const { terms: draftTerms, topic } = await askClaude("terms", { transcript_text });
+      stage = "Picking the key ideas (2 of 4)";
+      const { ideas } = await askClaude("ideas", { transcript_text, terms: draftTerms });
+      stage = "Writing the cards (3 of 4)";
+      const draftCards = await askForCards({ transcript_text, terms: draftTerms, ideas });
+      stage = "Checking the cards against the rules (4 of 4)";
+      const { terms, cards } = await reviewDeck({ transcript_text, terms: draftTerms, cards: draftCards });
       // Two vocab cards per term, built by our server from the terms list.
       const vocab = (await (await postJson("/api/vocab-cards", { topic, terms })).json()).cards;
 
