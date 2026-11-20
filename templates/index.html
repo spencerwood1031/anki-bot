@@ -3,155 +3,176 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Anki Bot</title>
+  <title>Anki Bot · Spencer Wood</title>
   <meta name="description" content="Turn a YouTube lecture into an Anki deck.">
+  <link rel="icon" href="https://spencerjwood.com/favicon.ico" sizes="any">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,500;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
   <style>
+    /* The look of spencerjwood.com: cream paper, red, black, Libre Franklin,
+       small spaced-out capitals for labels, 2px red rules, square buttons. */
     :root {
-      --bg: #f6f5f1;
-      --card: #ffffff;
-      --text: #1f1f1c;
-      --muted: #6b6a63;
-      --border: #dddbd2;
-      --accent: #2f5bd3;
-      --accent-text: #ffffff;
-      --error-bg: #fdecea;
-      --error-text: #8a1c12;
+      --paper: #f1e8d7;
+      --red: #e10600;
+      --soft: #f7b5b2;
+      --ink: #000;
+      --faint: rgba(0, 0, 0, 0.15);
+      --muted: rgba(0, 0, 0, 0.6);
+      --font: "Libre Franklin", "Franklin Gothic Medium", "Franklin Gothic", Arial, sans-serif;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #161614;
-        --card: #1f1f1c;
-        --text: #ecebe6;
-        --muted: #a3a29a;
-        --border: #3a3a35;
-        --accent: #7c9cff;
-        --accent-text: #10131c;
-        --error-bg: #3b1714;
-        --error-text: #ffb4a9;
-      }
-    }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--paper); }
     body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--red);
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
     }
-    main { max-width: 560px; margin: 0 auto; padding: 48px 16px; }
-    h1 { font-size: 28px; margin: 0 0 4px; }
-    .lead { color: var(--muted); margin: 0 0 28px; }
-    form {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
+    a { color: var(--red); }
+
+    /* ---- Layout: sidebar left, content right (same as spencerjwood.com) ---- */
+    .page {
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      gap: 56px;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 56px 48px 96px;
     }
-    label { display: block; font-weight: 600; margin: 0 0 6px; }
-    .hint { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
-    .field { margin-bottom: 20px; }
-    input, textarea {
-      width: 100%;
-      font: inherit;
-      color: inherit;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
+    .page > aside { position: sticky; top: 56px; align-self: start; }
+    header h1 { white-space: nowrap; font-weight: 800; font-size: 38px; line-height: 0.95; letter-spacing: -0.01em; text-transform: uppercase; }
+    header h1 a { text-decoration: none; }
+    .rule { border: 0; border-top: 2px solid var(--red); margin: 20px 0 0; }
+    nav { display: flex; flex-direction: column; gap: 10px; margin-top: 28px; }
+    nav a, .label, .small-btn, button {
+      font-family: var(--font); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
     }
-    textarea { min-height: 140px; resize: vertical; }
-    details { margin-bottom: 20px; }
-    summary { cursor: pointer; color: var(--muted); }
-    details textarea { margin-top: 10px; }
-    a { color: var(--accent); }
+    nav a { text-decoration: none; width: fit-content; border-bottom: 2px solid transparent; }
+    nav a:hover { border-bottom-color: var(--soft); }
+    nav a.active { border-bottom-color: var(--red); }
+
+    main { max-width: 640px; color: var(--ink); }
+    .title { font-size: 38px; font-weight: 800; line-height: 1; letter-spacing: -0.01em; color: var(--red); }
+    .sub {
+      margin: 10px 0 30px; padding-bottom: 18px; border-bottom: 2px solid var(--red);
+      font-size: 18px; font-style: italic; line-height: 1.4;
+    }
+    .label { display: block; color: var(--ink); margin: 0 0 6px; }
+    .hint { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 8px; }
+    .hint a { color: var(--red); }
+    footer { margin-top: 40px; font-size: 13px; font-style: italic; }
+    footer a { color: var(--red); }
+
+    /* ---- Inputs: underline only, like the quote search on spencerjwood.com ---- */
+    input, textarea, select {
+      width: 100%; font: 400 16px var(--font); color: var(--ink);
+      background: transparent; border: 0; border-bottom: 2px solid var(--ink); border-radius: 0;
+      padding: 8px 0; outline: none; -webkit-appearance: none; appearance: none;
+    }
+    input:focus, textarea:focus, select:focus { border-bottom-color: var(--red); }
+    input::placeholder, textarea::placeholder { color: rgba(0, 0, 0, 0.4); }
+    textarea { resize: vertical; line-height: 1.5; field-sizing: content; min-height: 2.6em; }  /* grows with its text */
+    select {
+      width: auto; cursor: pointer; padding: 4px 22px 4px 0; font-size: 13px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E") right 4px center / 10px no-repeat;
+    }
+    .field { margin-bottom: 26px; }
+    details { margin-bottom: 28px; }
+    summary { cursor: pointer; font-size: 14px; font-style: italic; }
+    details textarea { margin-top: 12px; min-height: 140px; border: 1px solid var(--faint); border-bottom-width: 2px; padding: 8px; }
+
+    /* ---- Buttons: square, red outline, fill red on hover ---- */
     button {
-      width: 100%;
-      font: inherit;
-      font-weight: 600;
-      color: var(--accent-text);
-      background: var(--accent);
-      border: 0;
-      border-radius: 8px;
-      padding: 12px;
-      cursor: pointer;
+      background: none; color: var(--red); border: 2px solid var(--red); border-radius: 0;
+      padding: 11px 16px; cursor: pointer;
     }
-    button:disabled { opacity: 0.6; cursor: wait; }
-    #status { margin: 16px 0 0; color: var(--muted); }
-    #status.error {
-      color: var(--error-text);
-      background: var(--error-bg);
-      border-radius: 8px;
-      padding: 10px 12px;
+    button:hover { background: var(--red); color: var(--paper); }
+    button.primary { background: var(--red); color: var(--paper); }
+    button.primary:hover { background: var(--ink); border-color: var(--ink); }
+    button:disabled { opacity: 0.5; cursor: wait; }
+    #submit { width: 100%; }
+    /* Small text buttons on each card, underlined like the quote tags */
+    .small-btn {
+      background: none; border: 0; padding: 0; color: var(--red); font-size: 11px;
+      border-bottom: 2px solid var(--soft);
     }
-    footer { color: var(--muted); font-size: 14px; margin-top: 24px; }
+    .small-btn:hover { background: none; color: var(--red); border-bottom-color: var(--red); }
+
+    /* ---- Status lines ---- */
+    .status { margin-top: 16px; font-size: 14px; font-style: italic; }
+    .status.error { font-style: normal; color: var(--red); border: 2px solid var(--red); padding: 10px 12px; }
 
     /* ---- Review screen ---- */
-    main.wide { max-width: 760px; }
     .review-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-    .review-head h2 { font-size: 20px; margin: 0; }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 12px;
-    }
-    .card-top { display: flex; gap: 8px 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; font-size: 14px; color: var(--muted); }
+    .count { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); }
+    .card { padding: 22px 0; border-top: 1px solid var(--faint); }
+    #card-list { margin-top: 18px; }
+    .card-top { display: flex; gap: 8px 16px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; font-size: 13px; }
+    .card-top .num { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--red); }
     .card-top .spacer { flex: 1; }
-    .card textarea { min-height: 0; margin-bottom: 8px; }
-    select {
-      font: inherit; font-size: 14px; color: inherit;
-      background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px;
-    }
-    input.time { width: 72px; padding: 4px 6px; font-size: 14px; }
-    button.small {
-      width: auto; font-size: 14px; font-weight: 500; padding: 6px 10px;
-      background: transparent; color: var(--accent); border: 1px solid var(--border);
-    }
-    button.small.danger { color: var(--error-text); }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .suggestion {
-      border-left: 3px solid var(--accent);
-      background: var(--bg);
-      border-radius: 6px;
-      padding: 10px 12px;
-      margin-top: 8px;
-      font-size: 15px;
-    }
-    .suggestion .why { color: var(--muted); margin: 0 0 8px; }
-    .suggestion .s-card { margin: 0 0 8px; }
-    .new-card { border-style: dashed; }
-    .field-label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 0 4px; }
-    .card input.hidden-part { margin-bottom: 8px; }
-    .problem { color: var(--error-text); font-size: 14px; margin: -2px 0 8px; }
-    /* The hidden part of a fill-in-the-blank card, shown highlighted. */
-    .blank {
-      background: color-mix(in srgb, var(--accent) 18%, transparent);
-      color: var(--text);
-      border-radius: 4px;
-      padding: 0 4px;
-      font-weight: 600;
-    }
-    .bottom-bar { display: flex; gap: 12px; margin-top: 20px; }
+    .card-top a { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; border-bottom: 2px solid var(--soft); }
+    .card-top a:hover { border-bottom-color: var(--red); }
+    input.time { width: 56px; padding: 4px 0; font-size: 13px; border-bottom-width: 1px; }
+    .card textarea { margin-bottom: 14px; }
+    .card input { margin-bottom: 14px; }
+    .field-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .problem { color: var(--red); font-size: 13px; margin: -6px 0 12px; }
+    /* Claude's suggested rewrite: indented with a pink rule, like the history note on the quotes page */
+    .suggestion { margin-top: 4px; padding: 4px 0 4px 16px; border-left: 2px solid var(--soft); font-size: 15px; }
+    .suggestion .why { font-style: italic; color: var(--muted); margin-bottom: 10px; }
+    .suggestion .s-card { margin-bottom: 10px; }
+    .suggestion b { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    .row { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 4px; }
+    .card .error-note { color: var(--red); font-size: 13px; }
+    /* The hidden part of a fill-in-the-blank card */
+    .blank { background: var(--soft); color: var(--ink); padding: 0 4px; font-weight: 700; }
+    .new-card { margin-top: 8px; padding: 22px 0 0; border-top: 2px solid var(--red); }
+    .new-card .card-top strong { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); }
+    .bottom-bar { display: flex; gap: 12px; margin-top: 32px; }
     .bottom-bar button { flex: 1; }
-    button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--border); }
-    #review-status { margin: 16px 0 0; color: var(--muted); }
-    #review-status.error { color: var(--error-text); background: var(--error-bg); border-radius: 8px; padding: 10px 12px; }
+
+    @media (max-width: 860px) {
+      .page { grid-template-columns: 1fr; gap: 28px; padding: 32px 16px 72px; }
+      .page > aside { position: static; }
+      header h1 { font-size: clamp(26px, 8.4vw, 38px); }
+      .title { font-size: clamp(26px, 8.4vw, 38px); }
+      nav { flex-direction: row; flex-wrap: wrap; gap: 8px 20px; margin-top: 20px; padding-bottom: 20px; border-bottom: 2px solid var(--red); }
+      .sub { font-size: 17px; }
+    }
   </style>
 </head>
 <body>
+<div class="page">
+  <aside>
+    <header>
+      <h1><a href="https://spencerjwood.com/">Spencer Wood</a></h1>
+      <hr class="rule">
+    </header>
+    <nav>
+      <a href="https://spencerjwood.com/#about">About</a>
+      <a href="https://spencerjwood.com/#articles">Articles</a>
+      <a href="https://spencerjwood.com/#books">Bookshelf</a>
+      <a href="https://spencerjwood.com/#photography">Photography</a>
+      <a href="https://spencerjwood.com/#quotes">Commonplace Book</a>
+      <a href="/" class="active" aria-current="page">Anki Bot</a>
+    </nav>
+  </aside>
+
 <main>
-  <h1>Anki Bot</h1>
-  <p class="lead">Paste a YouTube lecture and get flashcards on its key ideas. Review and edit them, add your own, then download an Anki deck. Each card links back to the moment in the video it came from.</p>
+  <h2 class="title">Anki Bot</h2>
+  <p class="sub">Turn a YouTube lecture into flashcards on its key ideas. Review and edit them, add your own, then download an Anki deck. Each card links back to the moment in the video it came from.</p>
 
   <section id="start-view">
   <form id="deck-form">
     <div class="field">
-      <label for="url">YouTube link</label>
+      <label class="label" for="url">YouTube link</label>
       <input id="url" type="url" required placeholder="https://youtu.be/aircAruvnKk">
     </div>
 
     <div class="field">
-      <label for="api-key">Your Anthropic API key</label>
+      <label class="label" for="api-key">Your Anthropic API key</label>
       <input id="api-key" type="password" required autocomplete="off" placeholder="sk-ant-...">
       <p class="hint">
         The cards are written by Claude, using your key. Get one at
@@ -162,25 +183,25 @@
     </div>
 
     <details>
-      <summary>Video won't load? Paste the transcript instead</summary>
+      <summary>Video won't load? Paste the transcript instead.</summary>
       <textarea id="transcript" placeholder="On YouTube, open the video's description, click &quot;Show transcript&quot;, then select all of it and paste it here."></textarea>
     </details>
 
-    <button id="submit" type="submit">Make my cards</button>
+    <button id="submit" class="primary" type="submit">Make my cards</button>
     <p id="status" role="status" hidden></p>
   </form>
   </section>
 
   <section id="review-view" hidden>
     <div class="review-head">
-      <h2 id="deck-title"></h2>
-      <span id="card-count" class="hint"></span>
+      <span class="label" id="deck-title"></span>
+      <span id="card-count" class="count"></span>
     </div>
     <p class="hint">Edit any card, delete the ones you don't want, or add your own. "Suggest a better version" asks Claude to rewrite a card to follow good flashcard rules.</p>
     <p id="no-times" class="hint" hidden>The pasted transcript had no timestamps, so the cards can't link to the right moment in the video. Paste it with its timestamps for working links, or type a time on any card.</p>
     <div id="card-list"></div>
 
-    <div class="card new-card">
+    <div class="new-card">
       <div class="card-top">
         <strong>Add your own card</strong>
         <span class="spacer"></span>
@@ -190,18 +211,19 @@
         </select>
       </div>
       <div id="new-fields"></div>
-      <button id="add-card" class="small" type="button">Add card</button>
+      <button id="add-card" type="button">Add card</button>
     </div>
 
     <div class="bottom-bar">
-      <button id="start-over" class="secondary" type="button">Start over</button>
-      <button id="download" type="button">Download deck</button>
+      <button id="start-over" type="button">Start over</button>
+      <button id="download" class="primary" type="button">Download deck</button>
     </div>
     <p id="review-status" role="status" hidden></p>
   </section>
 
   <footer>Open the downloaded .apkg file with <a href="https://apps.ankiweb.net" target="_blank" rel="noopener">Anki</a> to import it.</footer>
 </main>
+</div>
 
 <script>
   // ---------------------------------------------------------------
@@ -221,7 +243,7 @@
   function showStatus(element, text, isError) {
     element.hidden = false;
     element.textContent = text;
-    element.className = isError ? "error" : "";
+    element.className = isError ? "status error" : "status";
   }
 
   // POST some JSON and return the parsed reply, or throw with the server's message.
@@ -377,41 +399,46 @@
   }
 
   // ---------------- Fill-in-the-blank cards ----------------
-  // Anki stores a blank as {{c1::hidden part}}. Visitors never see that code:
-  // they edit a sentence with ___ where the blank goes, plus the hidden part,
-  // and we turn the two back into Anki's format.
+  // Anki stores a blank as {{c1::hidden part}} (a card can have several:
+  // c1, c2...). Visitors never see that code: they edit a sentence with ___
+  // for each blank, plus one box per hidden part, and we turn those back
+  // into Anki's format.
 
   const BLANK = "___";
   const CLOZE = /\{\{c\d+::(.*?)(?:::.*?)?\}\}/g;
 
-  // "Cost about {{c1::$2 million}}." -> { sentence: "Cost about ___.", hidden: "$2 million" }
+  // "Files: {{c1::params}} and {{c2::run}}." -> { sentence: "Files: ___ and ___.", hiddens: ["params", "run"] }
   function clozeParts(front) {
-    let hidden = "";
-    const sentence = front.replace(CLOZE, (match, text) => {
-      if (hidden) return text;  // one blank per card; any extra blanks become plain text
-      hidden = text;
-      return BLANK;
-    });
-    return { sentence, hidden };
+    const hiddens = [];
+    const sentence = front.replace(CLOZE, (match, text) => { hiddens.push(text); return BLANK; });
+    return { sentence, hiddens };
   }
 
-  // The reverse. If there's no ___, the hidden part's first appearance in the
-  // sentence becomes the blank. Returns "" if there's nowhere to put it.
-  function clozeFront(sentence, hidden) {
-    hidden = hidden.trim();
-    if (!hidden) return "";
-    const cloze = () => `{{c1::${hidden}}}`;  // a function, so "$" in the answer stays literal
-    if (sentence.includes(BLANK)) return sentence.replace(BLANK, cloze);
-    if (sentence.includes(hidden)) return sentence.replace(hidden, cloze);
-    return "";
+  // The reverse. Each ___ gets the next hidden part, numbered c1, c2...
+  // With no ___ and one hidden part, its first appearance in the sentence
+  // becomes the blank. Returns "" if the blanks and hidden parts don't line up.
+  function clozeFront(sentence, hiddens) {
+    hiddens = hiddens.map((h) => h.trim());
+    if (!hiddens.length || hiddens.some((h) => !h)) return "";
+    const blanks = sentence.split(BLANK).length - 1;
+    if (blanks === 0 && hiddens.length === 1 && sentence.includes(hiddens[0])) {
+      return sentence.replace(hiddens[0], () => `{{c1::${hiddens[0]}}}`);  // a function, so "$" stays literal
+    }
+    if (blanks !== hiddens.length) return "";
+    let n = 0;
+    return sentence.replaceAll(BLANK, () => { const h = hiddens[n++]; return `{{c${n}::${h}}}`; });
   }
 
-  // A card's front as readable nodes: the sentence with its hidden part highlighted.
+  // A card's front as readable nodes: the sentence with its hidden parts highlighted.
   function readableFront(card) {
     if (card.card_type !== "cloze") return [card.front];
-    const { sentence, hidden } = clozeParts(card.front);
-    const [before, after = ""] = sentence.split(BLANK);
-    return [before, el("span", { className: "blank", textContent: hidden }), after];
+    const { sentence, hiddens } = clozeParts(card.front);
+    const nodes = [];
+    sentence.split(BLANK).forEach((text, i) => {
+      if (i > 0) nodes.push(el("span", { className: "blank", textContent: hiddens[i - 1] }));
+      nodes.push(text);
+    });
+    return nodes;
   }
 
   // The edit boxes for one card (also used by the "Add your own card" form).
@@ -427,22 +454,44 @@
     }
 
     if (card.sentence === undefined) Object.assign(card, clozeParts(card.front));
-    const problem = el("p", { className: "problem", textContent:
-      "Type the hidden part, and either put ___ where it goes or use the same words in the sentence." });
+    if (!card.hiddens.length) card.hiddens = [""];
+    const problem = el("p", { className: "problem" });
+    const hiddenBoxes = el("div");
+
     const update = () => {
-      card.front = clozeFront(card.sentence, card.hidden);
-      problem.hidden = !!card.front || (!card.sentence && !card.hidden);
+      card.front = clozeFront(card.sentence, card.hiddens);
+      const blanks = card.sentence.split(BLANK).length - 1;
+      problem.textContent = blanks > 1 && blanks !== card.hiddens.length
+        ? `The sentence has ${blanks} blanks; fill in a hidden part for each.`
+        : "Type the hidden part, and either put ___ where it goes or use the same words in the sentence.";
+      problem.hidden = !!card.front || (!card.sentence && !card.hiddens.join(""));
     };
+    // One box per ___ in the sentence (at least one).
+    const drawHiddenBoxes = () => {
+      const blanks = Math.max(1, card.sentence.split(BLANK).length - 1);
+      while (card.hiddens.length < blanks) card.hiddens.push("");
+      card.hiddens.length = blanks;
+      hiddenBoxes.replaceChildren(...card.hiddens.flatMap((value, i) => {
+        const input = el("input", { value, placeholder: i === 0 ? "e.g. $2 million" : "" });
+        input.oninput = () => { card.hiddens[i] = input.value; update(); };
+        return box(blanks > 1 ? `Hidden part ${i + 1}` : "Hidden part", input);
+      }));
+    };
+
     const sentence = el("textarea", { rows: 2, value: card.sentence, placeholder: "e.g. Training Llama 2 cost about ___." });
-    sentence.oninput = () => { card.sentence = sentence.value; update(); };
-    const hidden = el("input", { className: "hidden-part", value: card.hidden, placeholder: "e.g. $2 million" });
-    hidden.oninput = () => { card.hidden = hidden.value; update(); };
+    sentence.oninput = () => {
+      const before = card.sentence.split(BLANK).length;
+      card.sentence = sentence.value;
+      if (card.sentence.split(BLANK).length !== before) drawHiddenBoxes();
+      update();
+    };
     const extra = el("textarea", { rows: 1, value: card.back, placeholder: "Optional: shown with the answer" });
     extra.oninput = () => { card.back = extra.value; };
+    drawHiddenBoxes();
     update();
     return [
-      ...box("Sentence (___ marks the blank)", sentence),
-      ...box("Hidden part", hidden), problem,
+      ...box("Sentence (___ marks each blank)", sentence),
+      hiddenBoxes, problem,
       ...box("Extra context", extra),
     ];
   }
@@ -451,13 +500,13 @@
   function changeType(card, newType) {
     if (newType === card.card_type) return;
     if (newType === "cloze") {
-      Object.assign(card, { sentence: card.front, hidden: card.back, back: "" });
-      card.front = clozeFront(card.sentence, card.hidden);
+      Object.assign(card, { sentence: card.front, hiddens: [card.back], back: "" });
+      card.front = clozeFront(card.sentence, card.hiddens);
     } else {
-      const { sentence, hidden } = card.sentence !== undefined ? card : clozeParts(card.front);
-      Object.assign(card, { front: sentence, back: hidden });
+      const { sentence, hiddens } = card.sentence !== undefined ? card : clozeParts(card.front);
+      Object.assign(card, { front: sentence, back: hiddens.join(", ") });
       delete card.sentence;
-      delete card.hidden;
+      delete card.hiddens;
     }
     card.card_type = newType;
   }
@@ -482,19 +531,19 @@
       target: "_blank", rel: "noopener", textContent: "Watch",
     });
 
-    const suggestButton = el("button", { className: "small", type: "button",
+    const suggestButton = el("button", { className: "small-btn", type: "button",
       textContent: card.loading ? "Thinking..." : "Suggest a better version", disabled: !!card.loading });
     suggestButton.onclick = () => suggestFor(card);
-    const deleteButton = el("button", { className: "small danger", type: "button", textContent: "Delete" });
+    const deleteButton = el("button", { className: "small-btn", type: "button", textContent: "Delete" });
     deleteButton.onclick = () => { deck.cards.splice(index, 1); renderCards(); };
 
     return el("div", { className: "card" },
       el("div", { className: "card-top" },
-        el("span", { textContent: `#${index + 1}` }), typeSelect, time,
+        el("span", { className: "num", textContent: `#${index + 1}` }), typeSelect, time,
         card.start_seconds > 0 || deck.hasTimestamps ? watch : "",
         el("span", { className: "spacer" }), suggestButton, deleteButton),
       ...editorFields(card),
-      card.error ? el("p", { className: "hint", textContent: card.error }) : "",
+      card.error ? el("p", { className: "error-note", textContent: card.error }) : "",
       card.suggestion ? renderSuggestion(card, index) : "");
   }
 
@@ -504,7 +553,7 @@
     const unchanged = s.cards.length === 1 &&
       s.cards[0].front === card.front && s.cards[0].back === card.back;
 
-    const useButton = el("button", { className: "small", type: "button",
+    const useButton = el("button", { className: "small-btn", type: "button",
       textContent: s.cards.length > 1 ? `Use these ${s.cards.length} cards` : "Use this" });
     useButton.onclick = () => {
       // Replace the card with the suggestion (it may split into several cards).
@@ -512,7 +561,7 @@
       deck.cards.splice(index, 1, ...replacements);
       renderCards();
     };
-    const keepButton = el("button", { className: "small", type: "button",
+    const keepButton = el("button", { className: "small-btn", type: "button",
       textContent: unchanged ? "OK" : "Keep mine" });
     keepButton.onclick = () => { delete card.suggestion; renderCards(); };
 
