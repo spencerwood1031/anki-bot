@@ -46,7 +46,8 @@ def main(url: str, terms_only: bool = False) -> None:
     transcript_text = transcript.format_for_prompt(segments)
 
     print("2/4 Extracting technical terms...")
-    terms = llm.extract_terms(client, transcript_text)
+    term_list = llm.extract_terms(client, transcript_text)
+    terms = term_list.terms
     save_json(out_dir / "terms.json", [t.model_dump() for t in terms])
     if terms_only:
         print(f"Done: {len(terms)} terms. Score them with: python evals/eval_terms.py {video_id}")
@@ -57,18 +58,18 @@ def main(url: str, terms_only: bool = False) -> None:
     save_json(out_dir / "ideas.json", [i.model_dump() for i in ideas])
 
     print("4/4 Drafting cards...")
+    # Vocab cards come straight from the terms list; Claude writes the idea cards.
     cards = llm.draft_cards(client, transcript_text, ideas, terms)
-    card_dicts = []
-    for card in cards:
-        card_dict = card.model_dump()
-        card_dict["source_url"] = timestamp_url(video_id, card.start_seconds)
-        card_dicts.append(card_dict)
+    card_dicts = llm.vocab_cards(terms, term_list.topic)
+    card_dicts += [{"kind": "idea", **card.model_dump()} for card in cards]
+    for card_dict in card_dicts:
+        card_dict["source_url"] = timestamp_url(video_id, card_dict["start_seconds"])
     save_json(out_dir / "cards.json", card_dicts)
 
     apkg_path = out_dir / "deck.apkg"
     deck.build_deck(video_id, f"Lecture {video_id}", card_dicts, str(apkg_path))
     print(f"  saved {apkg_path}")
-    print(f"Done: {len(terms)} terms, {len(ideas)} ideas, {len(cards)} cards.")
+    print(f"Done: {len(terms)} terms, {len(ideas)} ideas, {len(card_dicts)} cards.")
 
 
 if __name__ == "__main__":
