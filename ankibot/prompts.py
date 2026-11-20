@@ -35,16 +35,19 @@ You will read a lecture transcript and list the technical terms worth a flashcar
 List every technical word the lecture uses: named concepts, techniques,
 components, notation, acronyms and jargon. Include general technical words the
 lecture uses without explaining them (e.g. GPU, zip file, compile, binary), since
-a student may not know them.
+a student may not know them. Also include the lecture's own named phrases for
+an idea, such as "inscrutable artifact" or "parroting": they are memorable
+handles for the lecture's points. General machine-learning words (training set,
+evaluation, optimization) are fine to keep.
 
 When two terms mean almost the same thing in this lecture (e.g. open-source
-model and open-weights model), list only the one the lecture leans on.
+model and open-weights model, or language model and LLM), list only the one the lecture leans on.
 
 Skip: everyday words; names of people; product, model and company names (e.g.
 Llama 2, ChatGPT, Claude); units of storage (byte, gigabyte); programming
 languages (C, Python); and generic words that aren't concepts of the subject
 (e.g. state-of-the-art, data type, dependencies, compression ratio, training run,
-computational complexity).
+computational complexity, objective).
 
 Give each term a short, atomic definition: one clause with the core meaning
 only, because it becomes the back of a flashcard. No "i.e.", no "e.g.", no
