@@ -314,9 +314,17 @@
   async function askForCards(inputs) {
     for (let attempt = 0; attempt < 2; attempt++) {
       const { cards } = await askClaude("cards", inputs);
-      if (cards.length && cards.every((card) => card.front.trim())) return cards;
+      if (!cardsLookBlank(cards, inputs.ideas.length)) return cards;
     }
     throw new Error("Claude returned blank cards twice. Please try again.");
+  }
+
+  // Same check as cards_look_blank in ankibot/llm.py: did Claude give up?
+  function cardsLookBlank(cards, ideaCount) {
+    if (cards.length < Math.max(1, Math.floor(ideaCount / 2))) return true;
+    return cards.some((card) => !card.front.trim()
+      || (card.card_type === "basic" && !card.back.trim())
+      || (card.card_type === "cloze" && !card.front.includes("{{c")));
   }
 
   // 95 -> "1:35", and back.

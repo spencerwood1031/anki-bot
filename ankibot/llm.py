@@ -17,6 +17,9 @@ from ankibot import prompts
 
 # One place to change the model for every call.
 MODEL = "claude-opus-5-5"
+# How hard Claude thinks. This model defaults to "medium"; at that level the
+# cards step sometimes gave up and returned a blank or placeholder card.
+EFFORT = "high"
 
 
 
@@ -123,6 +126,7 @@ def _ask(client: anthropic.Anthropic, system: str, user: str, output_shape: type
         system=system,
         messages=[{"role": "user", "content": user}],
         output_format=output_shape,
+        output_config={"effort": EFFORT},
     )
     if response.stop_reason == "refusal":
         raise RuntimeError("Claude declined this request.")
@@ -162,14 +166,25 @@ def draft_cards(client: anthropic.Anthropic, transcript_text: str, ideas: list[I
             prompts.cards_user(transcript_text, ideas, terms),
             CardList,
         )
-        if not cards_look_blank(result.cards):
+        if not cards_look_blank(result.cards, len(ideas)):
             return result.cards
     raise RuntimeError("Claude returned blank cards twice. Please try again.")
 
 
-def cards_look_blank(cards: list[Card]) -> bool:
-    """True if there are no cards, or any card has an empty front."""
-    return not cards or any(not card.front.strip() for card in cards)
+def cards_look_blank(cards: list[Card], idea_count: int) -> bool:
+    """True if Claude seems to have given up instead of writing real cards:
+    far fewer cards than ideas, an empty question or answer, or a
+    fill-in-the-blank card with no blank."""
+    if len(cards) < max(1, idea_count // 2):
+        return True
+    for card in cards:
+        if not card.front.strip():
+            return True
+        if card.card_type == "basic" and not card.back.strip():
+            return True
+        if card.card_type == "cloze" and "{{c" not in card.front:
+            return True
+    return False
 
 
 def vocab_cards(terms: list[Term], topic: str) -> list[dict]:
@@ -198,7 +213,7 @@ def request_body(system: str, user: str, output_shape: type[BaseModel]) -> dict:
         "max_tokens": 16000,
         "system": system,
         "messages": [{"role": "user", "content": user}],
-        "output_config": {"format": {"type": "json_schema", "schema": schema}},
+        "output_config": {"effort": EFFORT, "format": {"type": "json_schema", "schema": schema}},
     }
 
 
