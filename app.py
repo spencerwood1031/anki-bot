@@ -71,7 +71,11 @@ def add_security_headers(response):
 def home():
     # Sent as a plain file, not a Flask template, because the page shows
     # cloze examples like {{c1::...}} that the template engine would misread.
-    return send_file(PAGE)
+    # no-cache: browsers must check for a newer page on every visit, so a
+    # fix to the page's code reaches visitors right after a deploy.
+    response = send_file(PAGE)
+    response.headers["Cache-Control"] = "no-cache"
+    return response
 
 
 @app.post("/api/transcript")
