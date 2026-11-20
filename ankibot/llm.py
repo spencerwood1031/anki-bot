@@ -137,7 +137,7 @@ def extract_terms(client: anthropic.Anthropic, transcript_text: str) -> TermList
     """The lecture's technical terms, plus a short topic label for the card fronts."""
     return _ask(
         client,
-        prompts.TERMS_SYSTEM,
+        prompts.terms_system(),
         prompts.terms_user(transcript_text),
         TermList,
     )
@@ -220,7 +220,7 @@ def request_body(system: str, user: str, output_shape: type[BaseModel]) -> dict:
 def browser_request(step: str, data: dict) -> dict:
     """Build the request for one website step. `data` is what the page sent."""
     if step == "terms":
-        return request_body(prompts.TERMS_SYSTEM, prompts.terms_user(data["transcript_text"]), TermList)
+        return request_body(prompts.terms_system(), prompts.terms_user(data["transcript_text"]), TermList)
 
     if step == "ideas":
         terms = [Term(**t) for t in data["terms"]]

@@ -29,7 +29,8 @@ def _format_ideas(ideas) -> str:
 
 # ---- Call 1: technical terms ----
 
-TERMS_SYSTEM = """You help a student turn a lecture into flashcards.
+def terms_system() -> str:
+    return f"""You help a student turn a lecture into flashcards.
 You will read a lecture transcript and list the technical terms worth a flashcard.
 
 List every technical word the lecture uses: named concepts, techniques,
@@ -66,7 +67,13 @@ Each definition must stand on its own, because these cards get merged into
 larger decks: never mention "the lecture" or "the speaker".
 
 Also give a topic: a one-to-three word label for the lecture's subject (e.g.
-"LLMs" or "Neural nets"). It goes at the start of every card's front."""
+"LLMs" or "Neural nets"). It goes at the start of every card's front.
+
+Each term becomes two vocab cards, so these flashcard rules apply too. The ones
+about vocab and definitions (11 to 16, and 21) matter most for your list; pay
+close attention to their examples:
+
+{card_rules()}"""
 
 
 def terms_user(transcript_text: str) -> str:
