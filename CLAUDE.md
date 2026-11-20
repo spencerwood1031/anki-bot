@@ -10,7 +10,7 @@ Pipeline: YouTube URL → timestamped transcript → technical terms → 5–15 
 - The pipeline is Phase 1 (no critic pass or frame captures yet). The website (`app.py`, `templates/index.html`, hosted on Render) has a review screen where visitors edit, delete and add cards before downloading.
 - The `## Card rules` section below is also sent to Claude in the card-drafting prompt (`ankibot/prompts.py` reads it), so edit the rules there and only there.
 - Website: visitors' API keys must never reach our server. The browser calls Claude directly; the server only builds requests (`llm.browser_request`). Never add a server endpoint that takes a key, and never log or store one. `tests/test_key_privacy.py` guards this.
-- Two passes: `make_deck.py <url> --terms` makes only the vocab list; the full run writes two vocab cards per term (term → definition and definition → term, both written out, not Anki's reversed note type) plus cards for the main ideas.
+- Two passes: `make_deck.py <url> --terms` makes only the vocab list; the full run makes two vocab cards per term (term → definition and definition → term, both written out, not Anki's reversed note type), built in code from the terms list (`llm.vocab_cards`), plus main-idea cards written by Claude.
 - Evals: `evals/eval_terms.py <id>` compares `outputs/<id>/terms.json` against `golden/<id>/jargon.txt` (recall and precision, with Claude judging whether two terms match). `evals/eval_cards.py <id>` compares the main-idea cards against `golden/<id>/cards.md` and checks them against the card rules.
 
 

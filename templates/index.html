@@ -309,6 +309,16 @@
     return JSON.parse(message.content.find((block) => block.type === "text").text);
   }
 
+  // Now and then Claude answers the cards step with one blank card,
+  // so check the answer and ask once more before giving up.
+  async function askForCards(inputs) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { cards } = await askClaude("cards", inputs);
+      if (cards.length && cards.every((card) => card.front.trim())) return cards;
+    }
+    throw new Error("Claude returned blank cards twice. Please try again.");
+  }
+
   // 95 -> "1:35", and back.
   const formatTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   function parseTime(text) {
@@ -354,16 +364,18 @@
       const transcript_text = lecture.transcript_text;
 
       stage = "Finding the technical terms (1 of 3)";
-      const { terms } = await askClaude("terms", { transcript_text });
+      const { terms, topic } = await askClaude("terms", { transcript_text });
       stage = "Picking the key ideas (2 of 3)";
       const { ideas } = await askClaude("ideas", { transcript_text, terms });
       stage = "Writing the cards (3 of 3)";
-      const { cards } = await askClaude("cards", { transcript_text, terms, ideas });
+      const cards = await askForCards({ transcript_text, terms, ideas });
+      // Two vocab cards per term, built by our server from the terms list.
+      const vocab = (await (await postJson("/api/vocab-cards", { topic, terms })).json()).cards;
 
       deck.videoId = lecture.video_id;
       deck.title = lecture.title;
       deck.hasTimestamps = lecture.has_timestamps;
-      deck.cards = cards;
+      deck.cards = [...vocab, ...cards];
       $("status").hidden = true;
       showReview();
     } catch (error) {

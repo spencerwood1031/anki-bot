@@ -12,6 +12,7 @@ the parts that don't need the key:
 - POST /api/claude-request   {step, ...} -> the request body for one Claude call
                              (terms, ideas, cards or suggest), built from the same
                              prompts as make_deck.py. The browser sends it to Claude.
+- POST /api/vocab-cards      {topic, terms} -> {cards}: two vocab cards per term.
 - POST /api/download         {video_id, title, cards} -> the finished .apkg file.
 
 The server keeps nothing between requests: the cards live on the page until
@@ -96,6 +97,13 @@ def get_transcript():
 def claude_request():
     data = request.get_json()
     return jsonify(llm.browser_request(data["step"], data))
+
+
+@app.post("/api/vocab-cards")
+def vocab_cards():
+    data = request.get_json()
+    terms = [llm.Term(**t) for t in data["terms"]]
+    return jsonify(cards=llm.vocab_cards(terms, data["topic"]))
 
 
 @app.post("/api/download")
