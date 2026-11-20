@@ -36,6 +36,7 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 17. **Main-idea answers are atomic too.** The shortest answer that is still right: drop secondary clauses and "and how…" add-ons. "In the parameter values", not "In the parameter values and how they are obtained; the architecture is fully understood."
 18. **Ask the general lesson, not the lecture's example.** "How do models improve?" → "By scaling data and compute", not "How do state-of-the-art models get beyond Llama 2?" But keep the lecture's analogies: they make an idea easier to digest and remember. Ask about the analogy itself, not who said it: "How can we picture the result of training?" → "A zip file of the internet", not "What analogy does Karpathy use?"
 19. **Contrasts name both sides.** "How does training's compression differ from a zip file?" → "Training's compression is lossy; a zip file is lossless."
+20. **No overlapping cards.** Each card must test something no other card in the deck tests. Don't circle one idea from several angles ("we don't understand the parameters", "LLMs are inscrutable artifacts", "unlike a car, we don't understand the parts"): pick the single best card for it, and prefer the one with the lecture's analogy.
 
 ### Examples
 - Bad: "What are the characteristics of the Dead Sea?" (too broad). Good: "Where is the Dead Sea located?" → "On the border between Israel and Jordan."
