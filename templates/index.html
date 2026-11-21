@@ -92,6 +92,9 @@
     .choices input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
     details { margin-bottom: 28px; }
     summary { cursor: pointer; font-size: 14px; font-style: italic; }
+    /* "Paste the transcript instead": a plain red link, no arrow */
+    details.paste summary { list-style: none; color: var(--red); text-decoration: underline; text-underline-offset: 3px; }
+    details.paste summary::-webkit-details-marker { display: none; }
     .label-row { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
     .label-row .label { margin: 0; }
     button.info-btn {
@@ -243,7 +246,7 @@
       </div>
     </fieldset>
 
-    <details>
+    <details class="paste">
       <summary>Paste the transcript instead</summary>
       <ol class="hint">
         <li>On YouTube, open the video's description and click "Show transcript".</li>
