@@ -54,9 +54,8 @@
     nav a.active { border-bottom-color: var(--red); }
 
     main { max-width: 640px; color: var(--ink); }
-    .title { font-size: 38px; font-weight: 800; line-height: 1; letter-spacing: -0.01em; color: var(--red); }
     .sub {
-      margin: 10px 0 30px; padding-bottom: 18px; border-bottom: 2px solid var(--red);
+      margin: 0 0 30px; padding-bottom: 18px; border-bottom: 2px solid var(--red);
       font-size: 18px; font-style: italic; line-height: 1.4;
     }
     ol.sub { padding-left: 0; list-style-position: inside; }
@@ -175,7 +174,6 @@
       .page { grid-template-columns: 1fr; gap: 28px; padding: 32px 16px 72px; }
       .page > aside { position: static; }
       header h1 { font-size: clamp(26px, 8.4vw, 38px); }
-      .title { font-size: clamp(26px, 8.4vw, 38px); }
       nav { flex-direction: row; flex-wrap: wrap; gap: 8px 20px; margin-top: 20px; padding-bottom: 20px; border-bottom: 2px solid var(--red); }
       .sub { font-size: 17px; }
     }
@@ -199,7 +197,6 @@
   </aside>
 
 <main>
-  <h2 class="title">Anki Bot <em>(Beta)</em></h2>
   <ol class="sub">
     <li>Watch an interesting lecture</li>
     <li>Generate flashcards</li>
