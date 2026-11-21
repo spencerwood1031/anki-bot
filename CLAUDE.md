@@ -30,7 +30,7 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 11. **Every technical word gets two vocab cards.** Any technical word the lecture uses, even a general one it doesn't explain (GPU, zip file, neural network, compile, binary). Card one: "LLMs: Lossy compression" → its short definition. Card two: "LLMs: " + that definition → "Lossy compression". Write both out as basic cards.
 12. **Vocab is concepts, not names or basics.** No product, model or company names (Llama 2, ChatGPT, Claude), no units of storage (byte, gigabyte), no programming languages (C, Python), and no generic words like "state-of-the-art", "data type" or "objective". General machine-learning words (training set, evaluation, optimization) can stay; the user can cut them. Only terms people in the field actually use: a phrase the speaker coins for an idea ("inscrutable artifact", "dreaming") gets a main-idea question instead, and nothing that appears only in one of the lecture's examples (ISBN).
 13. **Definitions hold no numbers or trivia.** No sizes, counts, costs or lecture-specific examples ("140 GB for Llama 2 70B"). Never define a term by its synonym (parameters ↔ weights); say what it is.
-14. **Definitions are atomic.** One clause with the core meaning only: no "i.e.", no "e.g.", no parentheses, no trailing "which…" clause, and nothing after a semicolon. Extra facts belong on their own cards, or nowhere.
+14. **Definitions are atomic.** One clause with the core meaning only: no "i.e.", no "e.g.", no parentheses, and nothing after a semicolon. Test: if you can cut the end of a definition and what's left is still a correct definition, cut it (tails often start with "which", "whose", "that" or "so"). Extra facts belong on their own cards, or nowhere.
 15. **Important leftovers get one extra card.** If trimming a definition drops something important that no main-idea card covers, add one question card for it (not another vocab pair). Drop trivia, and drop anything a main-idea card already asks. Example: open-source vs open-weights → "LLMs: What does an open-source model release that an open-weights model doesn't?" → "Its training details and data."
 16. **No near-duplicate terms.** When two terms mean almost the same thing in this lecture (open-source model and open-weights model; language model and LLM), keep only the one the lecture leans on.
 17. **Main-idea answers are atomic too.** The shortest answer that is still right: drop secondary clauses and "and how…" add-ons. "In the parameter values", not "In the parameter values and how they are obtained; the architecture is fully understood."
@@ -48,20 +48,18 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 - Bad definition of parroting: "Reproducing training documents verbatim." Good: "Generating statistically likely text by mimicking patterns from training data without genuine comprehension."
 - Bad definition: "Small program (e.g. in C) that runs the neural network using the parameters." Good: "Small program that runs the neural network using the parameters."
 
-### A good main-idea set (Spencer's cards for the first part of Karpathy's "Intro to LLMs")
-Copy this style, not the content.
-- "LLMs: The two files that make up an LLM are {{c1::a parameters file}} and {{c2::a run file}}."
-- "LLMs: What can you do with an open-weights model that you can't with ChatGPT?" → "Download it and fine-tune it yourself."
-- "LLMs: Where does a model's "magic" lie, given its simple code?" → "In the parameter values."
-- "LLMs: Why does training cost far more than running a model?" → "Training has to find the parameters; running uses the already-set parameters."
-- "LLMs: How can we picture model training?" → "Compressing a chunk of the internet."
-- "LLMs: What do we use to compress a chunk of the internet?" → "A GPU cluster."
-- "LLMs: What is the result of compressing a chunk of the internet like?" → "A zip file of the internet."
-- "LLMs: How does training's compression differ from a zip file?" → "Training's compression is lossy; a zip file is lossless."
-- "LLMs: How do models improve?" → "By scaling data and compute."
+### A good main-idea set (for 3Blue1Brown's "But what is the Fourier Transform? A visual introduction")
+Copy this style, not the content. The examples deliberately come from a lecture we don't test on, so they can't leak into a deck.
+- "Fourier: What does the Fourier transform do to a signal?" → "Splits it into the pure frequencies that make it up."
+- "Fourier: How does the visual method turn a signal into a drawing?" → "By winding its graph around a circle."
+- "Fourier: What do we track as the winding frequency changes?" → "The center of mass of the wound-up graph."
+- "Fourier: Why does the center of mass jump away from the middle at certain winding frequencies?" → "The winding matches a frequency in the signal, so its peaks all land on one side."
+- "Fourier: Plotting the center of mass against the winding frequency gives an {{c1::almost-Fourier transform}}."
+- "Fourier: Why can the transform pull apart two notes played together?" → "It's linear: the transform of a sum is the sum of the transforms."
+- "Fourier: How does the real Fourier transform differ from the center of mass?" → "The real transform takes the integral; the center of mass takes the average."
 
-Cards Spencer cut from that lecture, and why:
-- "How do you run an open-weights LLM on a laptop?" (a how-to procedure, not an idea)
-- "How is the size of a parameters file determined?" (arithmetic trivia)
-- "How does the cost of training compare with running it?" (asks for a comparison; ask why instead)
-- Vocab terms: dependencies, compression ratio, training run, computational complexity, data type, state-of-the-art (generic words, not concepts of the subject)
+Cards cut from that lecture, and why:
+- "How do you compute a Fourier transform in Python?" (a how-to procedure, not an idea)
+- "What frequency is the A note in the example?" (number trivia)
+- "How does the transform of a pure tone compare with a mixed one?" (asks for a comparison; ask why instead)
+- Vocab terms: graph, data, state-of-the-art (generic words, not concepts of the subject)
