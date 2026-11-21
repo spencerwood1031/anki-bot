@@ -24,14 +24,14 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 5. **No yes/no questions.** Reframe them as open questions.
 6. **No sets or lists as answers.** Never ask "What are the parts of X?" Split a list into one-blank cloze cards that keep the list in the same order.
 7. **Cues narrow, never give away.** "(a type of function)" is fine; a rhyme or anything containing the answer is not.
-8. **Minimum wording.** Cut every word that isn't needed to get the answer. Start the front with a short topic label (e.g. "Neural nets:") instead of long setup wording; this also keeps similar cards from being confused.
+8. **Minimum wording.** Cut every word that isn't needed to get the answer. No topic label in front of the card ("LLMs:", "Calculus:") and no setup wording: anything that isn't the question itself makes the card worse. The question names its own subject, so it still stands alone (rule 21).
 9. **Follow the lecture's story.** Main-idea cards walk through the lecture's main line of reasoning, one step per card, so together they read as a chain (training is like compressing the internet → done on a GPU cluster → the result is like a zip file → but lossy). Few cards, no side angles.
 10. **No trivia.** No cards on illustrative numbers (costs, counts, sizes, durations), on things mentioned only in passing, or about the speaker ("What analogy does Karpathy use…"). Ask about the idea itself.
-11. **Every technical word gets two vocab cards.** Any technical word the lecture uses, even a general one it doesn't explain (GPU, zip file, neural network, compile, binary). Card one: "LLMs: Lossy compression" → its short definition. Card two: "LLMs: " + that definition → "Lossy compression". Write both out as basic cards.
+11. **Every technical word gets two vocab cards.** Any technical word the lecture uses, even a general one it doesn't explain (GPU, zip file, neural network, compile, binary). Card one: "Lossy compression" → its short definition. Card two: that definition → "Lossy compression". Write both out as basic cards.
 12. **Vocab is concepts, not names or basics.** No product, model or company names (Llama 2, ChatGPT, Claude), no units of storage (byte, gigabyte), no programming languages (C, Python), and no generic words like "state-of-the-art", "data type" or "objective". General machine-learning words (training set, evaluation, optimization) can stay; the user can cut them. Only terms people in the field actually use: a phrase the speaker coins for an idea ("inscrutable artifact", "dreaming") gets a main-idea question instead, and nothing that appears only in one of the lecture's examples (ISBN), including the terms of a long worked example (pi, radius, circumference and concentric rings, when a calculus lecture works through the area of a circle). A term the lecture only name-drops without explaining or using it (a calculus intro listing "chain rule" and "Taylor series" as coming later) is not vocab either. Notation the lecture reasons with is vocab: keep every symbol of the family it uses (dx, dr and dA, not just two of them).
 13. **Definitions hold no numbers or trivia.** No sizes, counts, costs or lecture-specific examples ("140 GB for Llama 2 70B"). Never define a term by its synonym (parameters ↔ weights); say what it is.
 14. **Definitions are atomic.** One clause with the core meaning only: no "i.e.", no "e.g.", no parentheses, and nothing after a semicolon. Test: if you can cut the end of a definition and what's left is still a correct definition, cut it (tails often start with "which", "whose", "that" or "so"). Extra facts belong on their own cards, or nowhere.
-15. **Important leftovers get one extra card.** If trimming a definition drops something important that no main-idea card covers, add one question card for it (not another vocab pair). Drop trivia, and drop anything a main-idea card already asks. Example: open-source vs open-weights → "LLMs: What does an open-source model release that an open-weights model doesn't?" → "Its training details and data."
+15. **Important leftovers get one extra card.** If trimming a definition drops something important that no main-idea card covers, add one question card for it (not another vocab pair). Drop trivia, and drop anything a main-idea card already asks. Example: open-source vs open-weights → "What does an open-source model release that an open-weights model doesn't?" → "Its training details and data."
 16. **No near-duplicate terms.** When two terms mean almost the same thing in this lecture (open-source model and open-weights model; language model and LLM), keep only the one the lecture leans on.
 17. **Main-idea answers are atomic too.** The shortest answer that is still right: drop secondary clauses and "and how…" add-ons. "In the parameter values", not "In the parameter values and how they are obtained; the architecture is fully understood."
 18. **Ask the general lesson, not the lecture's example.** "How do models improve?" → "By scaling data and compute", not "How do state-of-the-art models get beyond Llama 2?" But keep the lecture's analogies: they make an idea easier to digest and remember. Ask about the analogy itself, not who said it: "How can we picture the result of training?" → "A zip file of the internet", not "What analogy does Karpathy use?" A long worked example is different: it's a vehicle for teaching, not what the student needs to remember. When a lecture spends minutes deriving the area of a circle to introduce integrals, the cards ask about integrals and derivatives, not about the circle.
@@ -42,7 +42,7 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 ### Examples
 - Bad: "What are the characteristics of the Dead Sea?" (too broad). Good: "Where is the Dead Sea located?" → "On the border between Israel and Jordan."
 - Bad: "Does chicken stock make vegetable dishes taste like chicken?" (yes/no). Good: an open question about how stock changes the flavor of vegetables.
-- Bad: "What does GRE stand for in biochemistry?" Good: "Biochem: GRE" → "glucocorticoid response element."
+- Bad: "What does GRE stand for in biochemistry?" Good: "GRE (biochemistry)" → "glucocorticoid response element."
 - Bad definition: "Neural network trained on huge amounts of text to generate text; in essence a parameters file plus code that runs it." Good: "A neural network trained on huge amounts of text to generate text."
 - Bad definition: "The structure of a neural network, i.e. how its computations are arranged." Good: "The structure of a neural network."
 - Bad definition of parroting: "Reproducing training documents verbatim." Good: "Generating statistically likely text by mimicking patterns from training data without genuine comprehension."
@@ -50,13 +50,13 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 
 ### A good main-idea set (for 3Blue1Brown's "But what is the Fourier Transform? A visual introduction")
 Copy this style, not the content. The examples deliberately come from a lecture we don't test on, so they can't leak into a deck.
-- "Fourier: What does the Fourier transform do to a signal?" → "Splits it into the pure frequencies that make it up."
-- "Fourier: How does the visual method turn a signal into a drawing?" → "By winding its graph around a circle."
-- "Fourier: What do we track as the winding frequency changes?" → "The center of mass of the wound-up graph."
-- "Fourier: Why does the center of mass jump away from the middle at certain winding frequencies?" → "The winding matches a frequency in the signal, so its peaks all land on one side."
-- "Fourier: Plotting the center of mass against the winding frequency gives an {{c1::almost-Fourier transform}}."
-- "Fourier: Why can the transform pull apart two notes played together?" → "It's linear: the transform of a sum is the sum of the transforms."
-- "Fourier: How does the real Fourier transform differ from the center of mass?" → "The real transform takes the integral; the center of mass takes the average."
+- "What does the Fourier transform do to a signal?" → "Splits it into the pure frequencies that make it up."
+- "How can a signal's frequencies be found visually?" → "By winding its graph around a circle."
+- "When a signal's graph is wound around a circle, what do we track as the winding frequency changes?" → "The center of mass of the wound-up graph."
+- "Why does a wound-up graph's center of mass jump away from the middle at certain winding frequencies?" → "The winding matches a frequency in the signal, so its peaks all land on one side."
+- "Plotting a wound-up graph's center of mass against the winding frequency gives an {{c1::almost-Fourier transform}}."
+- "Why can the Fourier transform pull apart two notes played together?" → "It's linear: the transform of a sum is the sum of the transforms."
+- "How does the real Fourier transform differ from a wound-up graph's center of mass?" → "The real transform takes the integral; the center of mass takes the average."
 
 Cards cut from that lecture, and why:
 - "How do you compute a Fourier transform in Python?" (a how-to procedure, not an idea)

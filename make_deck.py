@@ -73,7 +73,7 @@ def main(url: str, terms_only: bool = False) -> None:
     save_json(out_dir / "terms.json", [t.model_dump() for t in terms])  # the checked list
 
     # Vocab cards come straight from the terms list; Claude writes the idea cards.
-    card_dicts = llm.vocab_cards(terms, term_list.topic)
+    card_dicts = llm.vocab_cards(terms)
     card_dicts += [{"kind": "idea", **card.model_dump()} for card in cards]
     for card_dict in card_dicts:
         card_dict["source_url"] = timestamp_url(video_id, card_dict["start_seconds"])

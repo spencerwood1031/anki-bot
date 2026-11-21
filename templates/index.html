@@ -415,7 +415,7 @@
       const transcript_text = lecture.transcript_text;
 
       stage = "Finding the technical terms (1 of 4)";
-      const { terms: draftTerms, topic } = await askForTerms({ transcript_text });
+      const { terms: draftTerms } = await askForTerms({ transcript_text });
       stage = "Picking the key ideas (2 of 4)";
       const { ideas } = await askClaude("ideas", { transcript_text, terms: draftTerms });
       stage = "Writing the cards (3 of 4)";
@@ -423,7 +423,7 @@
       stage = "Checking the cards against the rules (4 of 4)";
       const { terms, cards, cut } = await reviewDeck({ transcript_text, terms: draftTerms, cards: draftCards });
       // Two vocab cards per term, built by our server from the terms list.
-      const vocab = (await (await postJson("/api/vocab-cards", { topic, terms })).json()).cards;
+      const vocab = (await (await postJson("/api/vocab-cards", { terms })).json()).cards;
 
       deck.videoId = lecture.video_id;
       deck.title = lecture.title;
