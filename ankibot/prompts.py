@@ -42,7 +42,12 @@ evaluation, optimization) are fine to keep.
 Only list terms people in the field actually use. A phrase the speaker coins
 for an idea (e.g. "inscrutable artifact", "dreaming") is not vocab: that idea
 belongs on a main-idea question instead. Also skip things that appear only in
-one of the lecture's examples (e.g. ISBN, from an example about a made-up book).
+one of the lecture's examples (e.g. ISBN, from an example about a made-up book),
+including the terms of a long worked example (pi, radius and circumference,
+when a calculus lecture works through the area of a circle), and terms the
+lecture only name-drops without explaining or using them (topics listed as
+"coming later"). Do list the notation the lecture reasons with, and every
+symbol of a family it uses (dx, dr and dA, not just two of them).
 
 When two terms mean almost the same thing in this lecture (e.g. open-source
 model and open-weights model, or language model and LLM), list only the one the lecture leans on.
