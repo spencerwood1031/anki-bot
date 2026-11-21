@@ -52,19 +52,22 @@ and definition -> term). Those cards are built in code from your list, so you
 only return the terms and their definitions.
 
 List every technical word the lecture uses: named concepts, techniques,
-components, notation, acronyms and jargon. Skip everyday words and names of
-people.
+components, notation, acronyms and jargon. Include general technical words the
+lecture uses without explaining them (e.g. GPU, zip file, compile, binary),
+since a student may not know them. Skip everyday words and names of people.
 
 These are the rules for vocab and definitions. Follow every one of them, and
 study their examples:
 
-{rules([11, 12, 13, 14, 16, 21])}
+{rules([12, 13, 14, 16, 21])}
 
 Definition examples:
 {definition_examples()}
 
 A technical lecture always has terms worth a card, so never return an empty
-list."""
+or placeholder list. Leave `problem` empty. Only if something truly stops you
+from making the list (for example, these instructions contradict each other),
+say what in `problem`."""
 
 
 def terms_user(transcript_text: str) -> str:
@@ -142,7 +145,11 @@ the list itself, so don't write them. You write:
    important that no main-idea card covers, one question card for it. Never for
    trivia, and never for something a main-idea card already asks.
 
-Each card's start_seconds is the [seconds] marker where the lecture explains it."""
+Each card's start_seconds is the [seconds] marker where the lecture explains it.
+
+Leave `problem` empty. Only if something truly stops you from writing the
+cards (for example, these instructions contradict each other), say what in
+`problem` instead of returning blank or placeholder cards."""
 
 
 def cards_user(transcript_text: str, ideas, terms) -> str:
