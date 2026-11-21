@@ -89,10 +89,19 @@
       display: inline-flex; align-items: center; justify-content: center; flex: none;
     }
     button.info-btn[aria-expanded="true"] { background: var(--red); color: var(--paper); }
-    .key-info-panel { margin: 12px 0 0; padding: 4px 0 4px 16px; border-left: 2px solid var(--soft); font-size: 13px; line-height: 1.5; }
-    .key-info-panel .key-info-title { font-weight: 700; }
-    .key-info-panel ul { margin: 6px 0 0 18px; }
-    .key-info-panel li, .key-info-panel p { margin-top: 6px; }
+    /* The (i) pop-up: a small card floating under the button, like a footnote on Substack. */
+    .label-row { position: relative; }
+    .key-info-pop {
+      position: absolute; top: calc(100% + 10px); left: 0; z-index: 10;
+      width: min(440px, 100%); padding: 14px 18px 16px;
+      background: var(--paper); border: 1px solid var(--faint); border-radius: 4px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+      font-size: 13px; line-height: 1.5; text-transform: none; letter-spacing: 0;
+    }
+    .key-info-pop .key-info-title { font-weight: 700; }
+    .key-info-pop ul { margin: 6px 0 0 18px; }
+    .key-info-pop li, .key-info-pop p { margin-top: 6px; }
+    .key-info-pop .key-info-title { margin-top: 0; }
     details.key-info { margin: 10px 0 0; font-size: 13px; line-height: 1.5; }
     details.key-info summary { font-size: 13px; color: var(--red); }
     details.key-info ul { margin: 10px 0 0 18px; }
@@ -193,23 +202,23 @@
       <div class="label-row">
         <label class="label" for="api-key">Your Anthropic API key</label>
         <button type="button" id="key-info-button" class="info-btn" aria-expanded="false" aria-controls="key-info" aria-label="How is my key protected?" title="How is my key protected?">i</button>
+        <div id="key-info" class="key-info-pop" role="dialog" aria-label="How is my key protected?" hidden>
+          <p class="key-info-title">How is my key protected?</p>
+          <p>The cards are written by Claude, using your key.</p>
+          <ul>
+            <li><b>It never reaches this website's server.</b> Your browser sends it straight to Anthropic (api.anthropic.com), the company that makes Claude, and nowhere else.</li>
+            <li><b>It isn't saved anywhere.</b> No cookies, no browser storage, no database, no logs. Close or reload this tab and it's gone.</li>
+            <li><b>The browser enforces this.</b> The page's security rules block it from sending data anywhere except this site and Anthropic, and from running any code but its own.</li>
+            <li><b>You can check.</b> Open your browser's developer tools (Network tab) while making a deck: the key appears only in requests to api.anthropic.com.</li>
+          </ul>
+          <p>To be extra safe, make a new key just for this site, set a spending limit in the Anthropic console, and delete the key when you're done.</p>
+        </div>
       </div>
       <input id="api-key" type="password" required autocomplete="off" placeholder="sk-ant-...">
       <p class="hint">
         Get an API key at
         <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>
       </p>
-      <div id="key-info" class="key-info-panel" hidden>
-        <p class="key-info-title">How is my key protected?</p>
-        <p>The cards are written by Claude, using your key.</p>
-        <ul>
-          <li><b>It never reaches this website's server.</b> Your browser sends it straight to Anthropic (api.anthropic.com), the company that makes Claude, and nowhere else.</li>
-          <li><b>It isn't saved anywhere.</b> No cookies, no browser storage, no database, no logs. Close or reload this tab and it's gone.</li>
-          <li><b>The browser enforces this.</b> The page's security rules block it from sending data anywhere except this site and Anthropic, and from running any code but its own.</li>
-          <li><b>You can check.</b> Open your browser's developer tools (Network tab) while making a deck: the key appears only in requests to api.anthropic.com.</li>
-        </ul>
-        <p>To be extra safe, make a new key just for this site, set a spending limit in the Anthropic console, and delete the key when you're done.</p>
-      </div>
     </div>
 
     <details>
@@ -421,12 +430,18 @@
 
   // ---------------- Step 1: make the cards ----------------
 
-  // The (i) button next to the API key box shows or hides how the key is protected.
-  $("key-info-button").addEventListener("click", () => {
-    const button = $("key-info-button");
-    const open = button.getAttribute("aria-expanded") !== "true";
-    button.setAttribute("aria-expanded", String(open));
+  // The (i) button next to the API key box opens a small pop-up on how the key
+  // is protected. A click anywhere else, or Escape, closes it.
+  function showKeyInfo(open) {
+    $("key-info-button").setAttribute("aria-expanded", String(open));
     $("key-info").hidden = !open;
+  }
+  $("key-info-button").addEventListener("click", () => showKeyInfo($("key-info").hidden));
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("#key-info, #key-info-button")) showKeyInfo(false);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") showKeyInfo(false);
   });
 
   $("deck-form").addEventListener("submit", async (event) => {
