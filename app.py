@@ -104,9 +104,19 @@ def home():
 @app.post("/api/transcript")
 def get_transcript():
     data = request.get_json()
+    url = data.get("url", "").strip()
+    pasted = data.get("transcript", "").strip()
     try:
-        video_id = video_id_from(data.get("url", "").strip())
-        segments = get_segments(video_id, data.get("transcript", "").strip())
+        # A YouTube link gives timestamped "Watch" links. With a pasted
+        # transcript the link is optional, and may be any site's page.
+        video_id = youtube_id_or_blank(url)
+        if not video_id and not pasted:
+            raise UserError(
+                "That isn't a YouTube link. For a lecture on another site, paste its transcript below."
+                if url else "Paste a YouTube link, or paste the lecture's transcript below."
+            )
+        source_url = "" if video_id else web_link_or_blank(url)
+        segments = get_segments(video_id, pasted)
     except UserError as error:
         return jsonify(error=str(error)), 400
 
@@ -115,7 +125,8 @@ def get_transcript():
         return jsonify(error="That video is too long. Try one under about 3 hours."), 400
     return jsonify(
         video_id=video_id,
-        title=video_title(video_id),
+        source_url=source_url,
+        title=video_title(video_id) if video_id else "Lecture",
         transcript_text=transcript_text,
         has_timestamps=transcript.has_timestamps(segments),
     )
@@ -137,28 +148,39 @@ def vocab_cards():
 @app.post("/api/download")
 def download():
     data = request.get_json()
-    video_id = data["video_id"]
-    title = data.get("title") or f"Lecture {video_id}"
+    video_id = data.get("video_id", "")
+    source_url = web_link_or_blank(data.get("source_url", ""))
+    title = data.get("title") or "Lecture"
     cards = []
     for card in data["cards"]:
         if card["card_type"] == "cloze" and "{{c" not in card["front"]:
             return jsonify(error=f'This fill-in-the-blank card has no blank: "{card["front"]}"'), 400
-        card["source_url"] = timestamp_url(video_id, card.get("start_seconds", 0))
+        # YouTube: link to the card's moment. Another site: link to the page. Neither: no link.
+        card["source_url"] = timestamp_url(video_id, card.get("start_seconds", 0)) if video_id else source_url
         cards.append(card)
     if not cards:
         return jsonify(error="The deck is empty. Add a card first."), 400
 
     # A fresh temporary folder per request, so two visitors never share files.
     apkg_path = Path(tempfile.mkdtemp()) / "deck.apkg"
-    deck.build_deck(video_id, title, cards, str(apkg_path))
+    deck.build_deck(video_id or source_url or title, title, cards, str(apkg_path))
     return send_file(apkg_path, as_attachment=True, download_name=safe_filename(title) + ".apkg")
 
 
-def video_id_from(url: str) -> str:
+def youtube_id_or_blank(url: str) -> str:
+    """The video id for a YouTube link, or "" for anything else (or nothing)."""
+    host = urllib.parse.urlparse(url).hostname or ""
+    if not (host == "youtu.be" or host == "youtube.com" or host.endswith(".youtube.com")):
+        return ""
     try:
         return transcript.get_video_id(url)
     except (ValueError, KeyError, IndexError):
-        raise UserError("That doesn't look like a YouTube video link.")
+        return ""
+
+
+def web_link_or_blank(url: str) -> str:
+    """Keep a link only if it's a plain web address, so a card never links to anything odd."""
+    return url if re.match(r"https?://[^\s\"'<>]+$", url) else ""
 
 
 def get_segments(video_id: str, pasted_transcript: str) -> list[dict]:

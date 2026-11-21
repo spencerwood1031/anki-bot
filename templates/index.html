@@ -216,7 +216,7 @@
   <form id="deck-form">
     <div class="field">
       <label class="label" for="url">YouTube link</label>
-      <input id="url" type="url" required placeholder="https://youtu.be/aircAruvnKk">
+      <input id="url" type="url" placeholder="https://youtu.be/aircAruvnKk">
     </div>
 
     <div class="field">
@@ -257,6 +257,7 @@
         <li>Make sure each line starts with a time like 0:04. If not, click the ⋮ at the top of the transcript and choose "Toggle timestamps". The times let each card link to its moment in the video.</li>
         <li>Select the whole transcript, copy it, and paste it below.</li>
       </ol>
+      <p class="hint">Lecture on another site? Paste its transcript here. The link above is then optional.</p>
       <textarea id="transcript" placeholder="0:00 Hey everyone…&#10;0:04 This is the first video in a series…"></textarea>
     </details>
 
@@ -302,7 +303,8 @@
   // Everything the page knows lives in `deck`. The server keeps
   // nothing, so the cards exist only here until you download them.
   // ---------------------------------------------------------------
-  const deck = { videoId: "", title: "", cards: [], hasTimestamps: true, retries: [] };
+  // videoId: a YouTube video. sourceUrl: a page on another site (no timestamps). Both can be "".
+  const deck = { videoId: "", sourceUrl: "", title: "", cards: [], hasTimestamps: true, retries: [] };
 
   // The visitor's API key. It stays in this variable (in memory, never in
   // browser storage) and is only ever sent to api.anthropic.com, never to
@@ -531,6 +533,7 @@
         : [];
 
       deck.videoId = lecture.video_id;
+      deck.sourceUrl = lecture.source_url;
       deck.title = lecture.title;
       deck.hasTimestamps = lecture.has_timestamps;
       deck.cards = [...vocab, ...cards];
@@ -711,9 +714,16 @@
       ...editorFields(card),
       card.error ? el("p", { className: "error-note", textContent: card.error }) : "",
       card.suggestion ? renderSuggestion(card, index) : "",
-      // The card's moment in the video, tucked in the bottom corner.
-      el("div", { className: "card-foot" }, time,
-        hasLink ? watch : ""));
+      cardFoot(card, time, hasLink ? watch : ""));
+  }
+
+  // The bottom corner: the card's moment in a YouTube video, or a link to the
+  // lecture's page on another site (no times there), or nothing.
+  function cardFoot(card, time, watch) {
+    if (deck.videoId) return el("div", { className: "card-foot" }, time, watch);
+    if (deck.sourceUrl) return el("div", { className: "card-foot" },
+      el("a", { href: deck.sourceUrl, target: "_blank", rel: "noopener", textContent: "Watch" }));
+    return "";
   }
 
   // Claude's suggested rewrite, shown under the card, with "Use this" / "Keep mine".
@@ -800,6 +810,7 @@
     try {
       const response = await postJson("/api/download", {
         video_id: deck.videoId,
+        source_url: deck.sourceUrl,
         title: deck.title,
         cards: deck.cards.map(({ card_type, front, back, start_seconds }) =>
           ({ card_type, front, back, start_seconds })),
