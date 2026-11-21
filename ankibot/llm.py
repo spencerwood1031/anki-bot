@@ -159,7 +159,7 @@ def extract_terms(client: anthropic.Anthropic, transcript_text: str) -> TermList
 def pick_ideas(client: anthropic.Anthropic, transcript_text: str, terms: list[Term]) -> list[Idea]:
     result = _ask(
         client,
-        prompts.IDEAS_SYSTEM,
+        prompts.ideas_system(),
         prompts.ideas_user(transcript_text, terms),
         IdeaList,
     )
@@ -261,7 +261,7 @@ def browser_request(step: str, data: dict) -> dict:
 
     if step == "ideas":
         terms = [Term(**t) for t in data["terms"]]
-        return request_body(prompts.IDEAS_SYSTEM, prompts.ideas_user(data["transcript_text"], terms), IdeaList)
+        return request_body(prompts.ideas_system(), prompts.ideas_user(data["transcript_text"], terms), IdeaList)
 
     if step == "cards":
         terms = [Term(**t) for t in data["terms"]]

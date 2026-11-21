@@ -16,6 +16,21 @@ def card_rules() -> str:
     return section.split("\n## ", 1)[0].strip()
 
 
+def rules(numbers: list[int]) -> str:
+    """Just the numbered rules asked for, word for word from CLAUDE.md.
+
+    Each step gets every rule that applies to its job and no others: rules
+    that have nothing to act on (e.g. card-wording rules, for the step that
+    only lists terms) confuse Claude more than they help."""
+    wanted = tuple(f"{n}. " for n in numbers)
+    return "\n".join(line for line in card_rules().splitlines() if line.startswith(wanted))
+
+
+def definition_examples() -> str:
+    """The bad/good definition examples from the card rules."""
+    return "\n".join(line for line in card_rules().splitlines() if line.startswith("- Bad definition"))
+
+
 def _format_terms(terms) -> str:
     return "\n".join(f"- {t.term}: {t.definition}" for t in terms)
 
@@ -31,50 +46,25 @@ def _format_ideas(ideas) -> str:
 
 def terms_system() -> str:
     return f"""You help a student turn a lecture into flashcards.
-You will read a lecture transcript and list the technical terms worth a flashcard.
+You will read a lecture transcript and list its technical terms, each with a
+short definition. Each term later becomes two vocab cards (term -> definition
+and definition -> term). Those cards are built in code from your list, so you
+only return the terms and their definitions.
 
 List every technical word the lecture uses: named concepts, techniques,
-components, notation, acronyms and jargon. Include general technical words the
-lecture uses without explaining them (e.g. GPU, zip file, compile, binary), since
-a student may not know them. General machine-learning words (training set,
-evaluation, optimization) are fine to keep.
+components, notation, acronyms and jargon. Skip everyday words and names of
+people.
 
-Only list terms people in the field actually use. A phrase the speaker coins
-for an idea (e.g. "inscrutable artifact", "dreaming") is not vocab: that idea
-belongs on a main-idea question instead. Also skip things that appear only in
-one of the lecture's examples (e.g. ISBN, from an example about a made-up book),
-including the terms of a long worked example (pi, radius and circumference,
-when a calculus lecture works through the area of a circle), and terms the
-lecture only name-drops without explaining or using them (topics listed as
-"coming later"). Do list the notation the lecture reasons with, and every
-symbol of a family it uses (dx, dr and dA, not just two of them).
+These are the rules for vocab and definitions. Follow every one of them, and
+study their examples:
 
-When two terms mean almost the same thing in this lecture (e.g. open-source
-model and open-weights model, or language model and LLM), list only the one the lecture leans on.
+{rules([11, 12, 13, 14, 16, 21])}
 
-Skip: everyday words; names of people; product, model and company names (e.g.
-Llama 2, ChatGPT, Claude); units of storage (byte, gigabyte); programming
-languages (C, Python); and generic words that aren't concepts of the subject
-(e.g. state-of-the-art, data type, dependencies, compression ratio, training run,
-computational complexity, objective).
-
-Give each term a short, atomic definition: one clause with the core meaning
-only, because it becomes the back of a flashcard. No "i.e.", no "e.g.", no
-parentheses, and nothing after a semicolon. For example, an LLM is "A neural
-network trained on huge amounts of text to generate text", not "...; in essence
-a parameters file plus code that runs it." A definition must contain no
-numbers, sizes, counts, costs or examples from the lecture, and must not define
-a term by a synonym (don't define "parameters" as "weights"); say what it is.
-Test each definition: if you can cut the end and what's left is still a
-correct definition, cut it. Tails often start with "which", "whose", "that" or
-"so" ("Representing data in fewer bits, which accurate prediction makes
-possible" should end at "bits").
-
-Each definition must stand on its own, because these cards get merged into
-larger decks: never mention "the lecture" or "the speaker".
+Definition examples:
+{definition_examples()}
 
 A technical lecture always has terms worth a card, so never return an empty
-list. (A later step checks your list against the full card rules.)"""
+list."""
 
 
 def terms_user(transcript_text: str) -> str:
@@ -90,21 +80,30 @@ where it first comes up."""
 
 # ---- Call 2: key ideas ----
 
-IDEAS_SYSTEM = """You help a student turn a lecture into flashcards.
-You will read a lecture transcript and pick the 5 to 15 most important ideas.
+def ideas_system() -> str:
+    return f"""You help a student turn a lecture into flashcards.
+You will read a lecture transcript and pick its most important ideas: at most
+15, and fewer is better. Each idea later becomes one main-idea card.
 
 An important idea is a core concept of the subject that a student should
 still understand a month later: a mechanism, a reason, or a relationship
-between concepts. The goal is long-term memory of the subject itself, so when
-the lecture spends a long time on a worked example (e.g. deriving the area of
-a circle to introduce integrals), the idea is the general concept the example
-teaches, not the example. Follow the lecture's main line of reasoning, so
-the ideas read as a chain, and order them as they appear in the lecture. Skip
-illustrative numbers (costs, counts, sizes, durations), side remarks, and
-anything about the speaker rather than the subject.
+between concepts. The goal is long-term memory of the subject itself.
 
-For each idea, give the [seconds] marker of the transcript line where the
-explanation begins."""
+These are the rules the main-idea cards must follow. Choose the ideas so that
+one card per idea will satisfy every one of them:
+
+{rules([9, 10, 18, 20])}
+
+So before you answer, check your list:
+- Each idea must be clearly different from every other. If two ideas would
+  lead to cards with nearly the same answer, merge them into one.
+- Drop fine technical details and side points that the main line of reasoning
+  doesn't need.
+- Drop any idea whose honest answer would be vague ("it's useful in many
+  problems").
+
+Order the ideas as they appear in the lecture. For each idea, give the
+[seconds] marker of the transcript line where the explanation begins."""
 
 
 def ideas_user(transcript_text: str, terms) -> str:
@@ -117,7 +116,7 @@ Technical terms already identified in this lecture:
 {_format_terms(terms)}
 </terms>
 
-Pick the 5 to 15 most important ideas."""
+Pick the most important ideas (at most 15)."""
 
 
 # ---- Call 3: draft cards ----

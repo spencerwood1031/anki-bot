@@ -1,0 +1,20 @@
+"""Each step's prompt must carry the rules meant for it, read from CLAUDE.md."""
+
+from ankibot import prompts
+
+
+def test_rules_picks_only_the_numbers_asked_for():
+    lines = prompts.rules([11, 14]).splitlines()
+    assert len(lines) == 2
+    assert lines[0].startswith("11. ") and lines[1].startswith("14. ")
+
+
+def test_terms_step_gets_the_vocab_rules_and_examples():
+    system = prompts.terms_system()
+    assert "**Definitions are atomic.**" in system
+    assert "- Bad definition" in system
+    assert "**Why/how over cloze.**" not in system   # a card-wording rule: not this step's job
+
+
+def test_ideas_step_gets_the_overlap_rule():
+    assert "**No overlapping cards.**" in prompts.ideas_system()
