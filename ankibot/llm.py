@@ -48,7 +48,6 @@ class Term(BaseModel):
 
 
 class TermList(BaseModel):
-    topic: str           # short label for the lecture's subject, e.g. "LLMs"
     terms: list[Term]
 
 
@@ -148,7 +147,7 @@ def _ask(client: anthropic.Anthropic, system: str, user: str, output_shape: type
 
 
 def extract_terms(client: anthropic.Anthropic, transcript_text: str) -> TermList:
-    """The lecture's technical terms, plus a short topic label for the card fronts.
+    """The lecture's technical terms.
     An empty list means Claude gave up, so we ask once more."""
     for attempt in range(2):
         result = _ask(client, prompts.terms_system(), prompts.terms_user(transcript_text), TermList)
@@ -221,16 +220,16 @@ def cards_look_blank(cards: list[Card], idea_count: int) -> bool:
     return False
 
 
-def vocab_cards(terms: list[Term], topic: str) -> list[dict]:
+def vocab_cards(terms: list[Term]) -> list[dict]:
     """Two cards per term, built in code so none get skipped:
-    "LLMs: Lossy compression" -> definition, and "LLMs: <definition>" -> term.
+    "Lossy compression" -> definition, and the definition -> "Lossy compression".
     A rules-check note on the term (see review_deck) goes on its first card."""
     cards = []
     for t in terms:
         # No full stop: the definition is also the front of the second card.
         definition = t.definition.strip().rstrip(".")
         for front, back in [(t.term, definition), (definition, t.term)]:
-            cards.append({"kind": "vocab", "card_type": "basic", "front": f"{topic}: {front}",
+            cards.append({"kind": "vocab", "card_type": "basic", "front": front,
                           "back": back, "start_seconds": t.start_seconds})
         cards[-2]["note"] = getattr(t, "note", "")
     return cards

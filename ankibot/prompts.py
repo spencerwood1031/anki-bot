@@ -73,9 +73,6 @@ possible" should end at "bits").
 Each definition must stand on its own, because these cards get merged into
 larger decks: never mention "the lecture" or "the speaker".
 
-Also give a topic: a one-to-three word label for the lecture's subject (e.g.
-"LLMs" or "Neural nets"). It goes at the start of every card's front.
-
 A technical lecture always has terms worth a card, so never return an empty
 list. (A later step checks your list against the full card rules.)"""
 
@@ -88,7 +85,7 @@ def terms_user(transcript_text: str) -> str:
 </transcript>
 
 List the technical terms worth a flashcard, each with the [seconds] marker
-where it first comes up, and give a short topic label for the lecture."""
+where it first comes up."""
 
 
 # ---- Call 2: key ideas ----
