@@ -81,6 +81,10 @@
     .field { margin-bottom: 26px; }
     details { margin-bottom: 28px; }
     summary { cursor: pointer; font-size: 14px; font-style: italic; }
+    details.key-info { margin: 10px 0 0; font-size: 13px; line-height: 1.5; }
+    details.key-info summary { font-size: 13px; color: var(--red); }
+    details.key-info ul { margin: 10px 0 0 18px; }
+    details.key-info li, details.key-info p { margin-top: 6px; }
     details textarea { margin-top: 12px; field-sizing: fixed; height: 200px; min-height: 0; resize: none; overflow-y: auto; border: 1px solid var(--faint); border-bottom-width: 2px; padding: 8px; }
 
     /* ---- Buttons: square, red outline, fill red on hover ---- */
@@ -180,6 +184,16 @@
         Your key never reaches our server: your browser sends it straight to Anthropic,
         and it's forgotten when you close this tab.
       </p>
+      <details class="key-info">
+        <summary>How is my key protected?</summary>
+        <ul>
+          <li><b>It never reaches this website's server.</b> Your browser sends it straight to Anthropic (api.anthropic.com), the company that makes Claude, and nowhere else.</li>
+          <li><b>It isn't saved anywhere.</b> No cookies, no browser storage, no database, no logs. Close or reload this tab and it's gone.</li>
+          <li><b>The browser enforces this.</b> The page's security rules block it from sending data anywhere except this site and Anthropic, and from running any code but its own.</li>
+          <li><b>You can check.</b> Open your browser's developer tools (Network tab) while making a deck: the key appears only in requests to api.anthropic.com.</li>
+        </ul>
+        <p>To be extra safe, make a new key just for this site, set a spending limit in the Anthropic console, and delete the key when you're done.</p>
+      </details>
     </div>
 
     <details>
@@ -250,10 +264,17 @@
 
   // POST some JSON and return the parsed reply, or throw with the server's message.
   async function postJson(path, body) {
+    const text = JSON.stringify(body);
+    // Safety net: this goes to our server, which must never see a key. If a
+    // key ended up in another box by mistake (say, pasted into the transcript),
+    // stop before anything is sent.
+    if (text.includes("sk-ant-") || (apiKey && text.includes(apiKey))) {
+      throw new Error("That looks like an API key outside the API key box. Remove it and try again.");
+    }
     const response = await fetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: text,
     });
     if (!response.ok) {
       let message = "Something went wrong. Please try again.";
