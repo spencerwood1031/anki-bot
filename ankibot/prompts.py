@@ -60,8 +60,10 @@ network trained on huge amounts of text to generate text", not "...; in essence
 a parameters file plus code that runs it." A definition must contain no
 numbers, sizes, counts, costs or examples from the lecture, and must not define
 a term by a synonym (don't define "parameters" as "weights"); say what it is.
-Don't tack on a "which..." clause ("Representing data in fewer bits, which
-accurate prediction makes possible" should end at "bits").
+Test each definition: if you can cut the end and what's left is still a
+correct definition, cut it. Tails often start with "which", "whose", "that" or
+"so" ("Representing data in fewer bits, which accurate prediction makes
+possible" should end at "bits").
 
 Each definition must stand on its own, because these cards get merged into
 larger decks: never mention "the lecture" or "the speaker".
