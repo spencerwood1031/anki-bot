@@ -59,6 +59,9 @@
       font-size: 18px; font-style: italic; line-height: 1.4;
     }
     ol.sub { padding-left: 0; list-style-position: inside; }
+    /* The note sits under the steps, above the red rule */
+    ol.sub { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
+    .intro-note { margin: 10px 0 30px; padding-bottom: 18px; border-bottom: 2px solid var(--red); }
     .label.beta { color: var(--red); margin-bottom: 10px; }
     .label { display: block; color: var(--ink); margin: 0 0 6px; }
     .hint { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 8px; }
@@ -207,6 +210,7 @@
     <li>Generate flashcards</li>
     <li>Retain new content in long-term memory</li>
   </ol>
+  <p class="hint intro-note">Made for videos that teach something: lectures, talks and explainers. A music video or a sports clip won't give useful cards.</p>
 
   <section id="start-view">
   <form id="deck-form">
@@ -418,8 +422,9 @@
 
   // The error when Claude fails a step twice, with its own reason if it gave one.
   function gaveUpMessage(what, problem) {
-    const reason = problem && problem.trim() ? ` Its reason: "${problem.trim()}"` : "";
-    return `Claude didn't return ${what}, twice.${reason} Please try again.`;
+    // With a reason (say, "this is song lyrics"), trying again won't help, so don't suggest it.
+    if (problem && problem.trim()) return `Claude couldn't make ${what}: "${problem.trim()}"`;
+    return `Claude didn't return ${what}, twice. Please try again.`;
   }
 
   // The critic pass: Claude checks the draft against the card rules and

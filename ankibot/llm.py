@@ -161,8 +161,10 @@ def extract_terms(client: anthropic.Anthropic, transcript_text: str) -> TermList
 
 def gave_up_message(what: str, problem: str) -> str:
     """The error shown when Claude fails a step twice, with its own reason if it gave one."""
-    reason = f' Its reason: "{problem.strip()}"' if problem.strip() else ""
-    return f"Claude didn't return {what}, twice.{reason} Please try again."
+    # With a reason (say, "this is song lyrics"), trying again won't help, so don't suggest it.
+    if problem.strip():
+        return f'Claude couldn\'t make {what}: "{problem.strip()}"'
+    return f"Claude didn't return {what}, twice. Please try again."
 
 
 def terms_look_blank(terms: list[Term]) -> bool:
