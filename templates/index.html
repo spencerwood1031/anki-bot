@@ -225,7 +225,7 @@
       <span class="label" id="deck-title"></span>
       <span id="card-count" class="count"></span>
     </div>
-    <p class="hint">Edit any card, delete the ones you don't want, or add your own. "Suggest a better version" asks Claude to rewrite a card to follow good flashcard rules.</p>
+    <p class="hint">Edit any card, delete the ones you don't want, or add your own. "Redo card" asks Claude to rewrite a card to follow good flashcard rules.</p>
     <p id="no-times" class="hint" hidden>The pasted transcript had no timestamps, so the cards can't link to the right moment in the video. Paste it with its timestamps for working links, or type a time on any card.</p>
     <div id="card-list"></div>
 
@@ -621,7 +621,7 @@
     });
 
     const suggestButton = el("button", { className: "small-btn", type: "button",
-      textContent: card.loading ? "Thinking..." : "Suggest a better version", disabled: !!card.loading });
+      textContent: card.loading ? "Thinking..." : "Redo card", disabled: !!card.loading });
     suggestButton.onclick = () => suggestFor(card);
     const deleteButton = el("button", { className: "small-btn", type: "button", textContent: "Delete" });
     deleteButton.onclick = () => { deck.cards.splice(index, 1); renderCards(); };
