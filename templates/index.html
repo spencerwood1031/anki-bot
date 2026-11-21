@@ -78,6 +78,11 @@
       background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E") right 4px center / 10px no-repeat;
     }
     .field { margin-bottom: 26px; }
+    /* "Which cards?" choice */
+    fieldset.field { border: 0; padding: 0; margin: 0 0 26px; min-width: 0; }
+    .choices { display: flex; gap: 8px 22px; flex-wrap: wrap; font-size: 15px; }
+    .choices label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .choices input { width: auto; margin: 0; appearance: auto; -webkit-appearance: auto; accent-color: var(--red); }
     details { margin-bottom: 28px; }
     summary { cursor: pointer; font-size: 14px; font-style: italic; }
     .label-row { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
@@ -219,6 +224,15 @@
         <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>
       </p>
     </div>
+
+    <fieldset class="field">
+      <legend class="label">Cards to make</legend>
+      <div class="choices">
+        <label><input type="radio" name="card-kinds" value="both" checked> Vocabulary and main ideas</label>
+        <label><input type="radio" name="card-kinds" value="vocab"> Vocabulary only</label>
+        <label><input type="radio" name="card-kinds" value="ideas"> Main ideas only</label>
+      </div>
+    </fieldset>
 
     <details>
       <summary>Video won't load? Paste the transcript instead.</summary>
@@ -402,7 +416,7 @@
   async function reviewDeck(draft) {
     const review = await askClaude("review", draft);
     const broken = review.terms.length < Math.floor(draft.terms.length / 2)
-      || cardsLookBlank(review.cards, draft.cards.length);
+      || (draft.cards.length > 0 && cardsLookBlank(review.cards, draft.cards.length));
     if (broken) return { ...draft, cut: ["The rules check came back broken, so the draft was kept."] };
     return review;
   }
@@ -473,17 +487,31 @@
       })).json();
       const transcript_text = lecture.transcript_text;
 
+      // Which cards the visitor asked for: "both", "vocab" or "ideas".
+      // The terms are found either way: the main-idea steps use them too.
+      const kinds = document.querySelector("input[name=card-kinds]:checked").value;
+      const wantVocab = kinds !== "ideas";
+      const wantIdeas = kinds !== "vocab";
+      const steps = wantIdeas ? 4 : 2;
+
       deck.retries = [];
-      stage = "Finding the technical terms (1 of 4)";
+      stage = `Finding the technical terms (1 of ${steps})`;
       const { terms: draftTerms } = await askForTerms({ transcript_text });
-      stage = "Picking the key ideas (2 of 4)";
-      const { ideas } = await askClaude("ideas", { transcript_text, terms: draftTerms });
-      stage = "Writing the cards (3 of 4)";
-      const draftCards = await askForCards({ transcript_text, terms: draftTerms, ideas });
-      stage = "Checking the cards against the rules (4 of 4)";
-      const { terms, cards, cut } = await reviewDeck({ transcript_text, terms: draftTerms, cards: draftCards });
+      let draftCards = [];
+      if (wantIdeas) {
+        stage = `Picking the key ideas (2 of ${steps})`;
+        const { ideas } = await askClaude("ideas", { transcript_text, terms: draftTerms });
+        stage = `Writing the cards (3 of ${steps})`;
+        draftCards = await askForCards({ transcript_text, terms: draftTerms, ideas });
+      }
+      stage = `Checking the cards against the rules (${steps} of ${steps})`;
+      const review = await reviewDeck({ transcript_text, terms: draftTerms, cards: draftCards });
+      const { terms, cut } = review;
+      const cards = wantIdeas ? review.cards : [];
       // Two vocab cards per term, built by our server from the terms list.
-      const vocab = (await (await postJson("/api/vocab-cards", { terms })).json()).cards;
+      const vocab = wantVocab
+        ? (await (await postJson("/api/vocab-cards", { terms })).json()).cards
+        : [];
 
       deck.videoId = lecture.video_id;
       deck.title = lecture.title;
