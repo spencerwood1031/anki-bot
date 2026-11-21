@@ -59,6 +59,7 @@
       margin: 10px 0 30px; padding-bottom: 18px; border-bottom: 2px solid var(--red);
       font-size: 18px; font-style: italic; line-height: 1.4;
     }
+    ol.sub { padding-left: 0; list-style-position: inside; }
     .label { display: block; color: var(--ink); margin: 0 0 6px; }
     .hint { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 8px; }
     .hint a { color: var(--red); }
@@ -193,7 +194,11 @@
 
 <main>
   <h2 class="title">Anki Bot – Beta</h2>
-  <p class="sub">Watch an interesting lecture, generate flashcards, retain new content in long-term memory.</p>
+  <ol class="sub">
+    <li>Watch an interesting lecture</li>
+    <li>Generate flashcards</li>
+    <li>Retain new content in long-term memory</li>
+  </ol>
 
   <section id="start-view">
   <form id="deck-form">
