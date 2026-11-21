@@ -91,9 +91,12 @@ where it first comes up, and give a short topic label for the lecture."""
 IDEAS_SYSTEM = """You help a student turn a lecture into flashcards.
 You will read a lecture transcript and pick the 5 to 15 most important ideas.
 
-An important idea is something the lecture spends time explaining and that a
-student should still understand a month later: a mechanism, a reason, or a
-relationship between concepts. Follow the lecture's main line of reasoning, so
+An important idea is a core concept of the subject that a student should
+still understand a month later: a mechanism, a reason, or a relationship
+between concepts. The goal is long-term memory of the subject itself, so when
+the lecture spends a long time on a worked example (e.g. deriving the area of
+a circle to introduce integrals), the idea is the general concept the example
+teaches, not the example. Follow the lecture's main line of reasoning, so
 the ideas read as a chain, and order them as they appear in the lecture. Skip
 illustrative numbers (costs, counts, sizes, durations), side remarks, and
 anything about the speaker rather than the subject.
