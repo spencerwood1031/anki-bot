@@ -217,6 +217,7 @@
 
     <div class="bottom-bar">
       <button id="start-over" type="button">Start over</button>
+      <button id="copy-text" type="button">Copy all cards as text</button>
       <button id="download" class="primary" type="button">Download deck</button>
     </div>
     <p id="review-status" role="status" hidden></p>
@@ -688,6 +689,18 @@
     } finally {
       button.disabled = false;
     }
+  });
+
+  // The whole deck as plain text, for pasting into a chat or a note.
+  $("copy-text").addEventListener("click", async () => {
+    const lines = deck.cards.map((card, i) => {
+      const line = `#${i + 1} ${card.front}` + (card.back ? ` -> ${card.back}` : "");
+      return card.note ? `${line}\n   Rules check: ${card.note}` : line;
+    });
+    if (deck.cut && deck.cut.length) lines.unshift("Rules check cut:", ...deck.cut.map((c) => `- ${c}`), "");
+    await navigator.clipboard.writeText(lines.join("\n"));
+    $("copy-text").textContent = "Copied!";
+    setTimeout(() => { $("copy-text").textContent = "Copy all cards as text"; }, 2000);
   });
 
   $("start-over").addEventListener("click", () => {
