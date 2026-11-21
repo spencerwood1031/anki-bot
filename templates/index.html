@@ -228,7 +228,6 @@
       <span id="card-count" class="count"></span>
     </div>
     <p class="hint">Edit any card, delete the ones you don't want, or add your own. "Redo card" asks Claude to rewrite a card to follow good flashcard rules.</p>
-    <p id="no-times" class="hint" hidden>The pasted transcript had no timestamps, so the cards can't link to the right moment in the video. Paste it with its timestamps for working links, or type a time on any card.</p>
     <div id="card-list"></div>
 
     <div class="new-card">
@@ -491,7 +490,6 @@
     $("review-view").hidden = false;
     document.querySelector("main").classList.add("wide");
     $("deck-title").textContent = deck.title;
-    $("no-times").hidden = deck.hasTimestamps;
     // For now, while we tune the rules check: show what it cut.
     // What the rules check did, tucked away at the bottom: it's for tuning
     // the prompts, not something a visitor needs to read.
@@ -628,7 +626,10 @@
   }
 
   function renderCard(card, index) {
+    const hasLink = card.start_seconds > 0 || deck.hasTimestamps;
     const time = el("input", { className: "time", value: formatTime(card.start_seconds || 0), ariaLabel: "Time in video" });
+    // No link yet: hovering over the time says why and how to fix it.
+    if (!hasLink) time.title = "The pasted transcript had no timestamps, so this card can't link to the right moment in the video. Paste it with its timestamps for working links, or type a time here.";
     time.onchange = () => { card.start_seconds = parseTime(time.value); renderCards(); };
     const watch = el("a", {
       href: `https://youtu.be/${deck.videoId}?t=${card.start_seconds || 0}`,
@@ -650,7 +651,7 @@
       card.suggestion ? renderSuggestion(card, index) : "",
       // The card's moment in the video, tucked in the bottom corner.
       el("div", { className: "card-foot" }, time,
-        card.start_seconds > 0 || deck.hasTimestamps ? watch : ""));
+        hasLink ? watch : ""));
   }
 
   // Claude's suggested rewrite, shown under the card, with "Use this" / "Keep mine".
