@@ -227,7 +227,9 @@ def vocab_cards(terms: list[Term], topic: str) -> list[dict]:
     A rules-check note on the term (see review_deck) goes on its first card."""
     cards = []
     for t in terms:
-        for front, back in [(t.term, t.definition), (t.definition, t.term)]:
+        # No full stop: the definition is also the front of the second card.
+        definition = t.definition.strip().rstrip(".")
+        for front, back in [(t.term, definition), (definition, t.term)]:
             cards.append({"kind": "vocab", "card_type": "basic", "front": f"{topic}: {front}",
                           "back": back, "start_seconds": t.start_seconds})
         cards[-2]["note"] = getattr(t, "note", "")
