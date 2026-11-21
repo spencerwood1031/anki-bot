@@ -48,18 +48,18 @@ Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's 
 - Bad definition of parroting: "Reproducing training documents verbatim." Good: "Generating statistically likely text by mimicking patterns from training data without genuine comprehension."
 - Bad definition: "Small program (e.g. in C) that runs the neural network using the parameters." Good: "Small program that runs the neural network using the parameters."
 
-### A good main-idea set (for a made-up lecture on how vaccines work)
-Copy this style, not the content. The examples deliberately come from a lecture we never test on, so they can't leak into a deck.
-- "Vaccines: How does a vaccine prepare the immune system?" → "By showing it a harmless version of a pathogen."
-- "Vaccines: What does the immune system make after meeting that harmless version?" → "Antibodies and memory cells."
-- "Vaccines: How can we picture memory cells?" → "A wanted poster for the pathogen."
-- "Vaccines: Why does a vaccinated person fight off the real pathogen faster?" → "Memory cells recognize it right away."
-- "Vaccines: The two main kinds of vaccine are {{c1::traditional}} and {{c2::mRNA}}."
-- "Vaccines: How does an mRNA vaccine differ from a traditional one?" → "An mRNA vaccine has your cells make the antigen; a traditional vaccine delivers the antigen itself."
-- "Vaccines: Why does herd immunity protect people who can't be vaccinated?" → "The pathogen can't find enough hosts to spread."
+### A good main-idea set (for 3Blue1Brown's "But what is the Fourier Transform? A visual introduction")
+Copy this style, not the content. The examples deliberately come from a lecture we don't test on, so they can't leak into a deck.
+- "Fourier: What does the Fourier transform do to a signal?" → "Splits it into the pure frequencies that make it up."
+- "Fourier: How does the visual method turn a signal into a drawing?" → "By winding its graph around a circle."
+- "Fourier: What do we track as the winding frequency changes?" → "The center of mass of the wound-up graph."
+- "Fourier: Why does the center of mass jump away from the middle at certain winding frequencies?" → "The winding matches a frequency in the signal, so its peaks all land on one side."
+- "Fourier: Plotting the center of mass against the winding frequency gives an {{c1::almost-Fourier transform}}."
+- "Fourier: Why can the transform pull apart two notes played together?" → "It's linear: the transform of a sum is the sum of the transforms."
+- "Fourier: How does the real Fourier transform differ from the center of mass?" → "The real transform takes the integral; the center of mass takes the average."
 
 Cards cut from that lecture, and why:
-- "How do you book a flu shot at a pharmacy?" (a how-to procedure, not an idea)
-- "How many doses did the trial use?" (number trivia)
-- "How does mRNA vaccine development speed compare with traditional?" (asks for a comparison; ask why instead)
-- Vocab terms: side effect, clinical trial, data, state-of-the-art (generic words, not concepts of the subject)
+- "How do you compute a Fourier transform in Python?" (a how-to procedure, not an idea)
+- "What frequency is the A note in the example?" (number trivia)
+- "How does the transform of a pure tone compare with a mixed one?" (asks for a comparison; ask why instead)
+- Vocab terms: graph, data, state-of-the-art (generic words, not concepts of the subject)
