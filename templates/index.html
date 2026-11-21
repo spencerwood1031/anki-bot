@@ -62,6 +62,7 @@
     .label { display: block; color: var(--ink); margin: 0 0 6px; }
     .hint { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 8px; }
     .hint a { color: var(--red); }
+    ol.hint { padding-left: 18px; margin-bottom: 12px; }
 
     /* ---- Inputs: underline only, like the quote search on spencerjwood.com ---- */
     input, textarea, select {
@@ -221,7 +222,12 @@
 
     <details>
       <summary>Video won't load? Paste the transcript instead.</summary>
-      <textarea id="transcript" placeholder="On YouTube, open the video's description, click &quot;Show transcript&quot;, then select all of it and paste it here."></textarea>
+      <ol class="hint">
+        <li>On YouTube, open the video's description and click "Show transcript".</li>
+        <li>Make sure each line starts with a time like 0:04. If not, click the ⋮ at the top of the transcript and choose "Toggle timestamps". The times let each card link to its moment in the video.</li>
+        <li>Select the whole transcript, copy it, and paste it below.</li>
+      </ol>
+      <textarea id="transcript" placeholder="0:00 Hey everyone…&#10;0:04 This is the first video in a series…"></textarea>
     </details>
 
     <button id="submit" class="primary" type="submit">Make my cards</button>
