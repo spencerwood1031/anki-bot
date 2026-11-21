@@ -18,3 +18,9 @@ def test_terms_step_gets_the_vocab_rules_and_examples():
 
 def test_ideas_step_gets_the_overlap_rule():
     assert "**No overlapping cards.**" in prompts.ideas_system()
+
+
+def test_critic_sees_each_terms_seconds_so_it_can_keep_them():
+    from ankibot.llm import Term
+    text = prompts.critic_user("[0] hi", [Term(term="derivative", definition="A rate", start_seconds=754)], [])
+    assert "[754] derivative" in text

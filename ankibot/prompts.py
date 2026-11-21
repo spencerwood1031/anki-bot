@@ -207,6 +207,8 @@ the term or card and the rule."""
 
 
 def critic_user(transcript_text: str, terms, cards) -> str:
+    # The critic sees each item's [seconds] so it can keep them (it can't keep what it can't see).
+    term_lines = "\n".join(f"- [{t.start_seconds}] {t.term}: {t.definition}" for t in terms)
     card_lines = "\n".join(
         f"- [{c.start_seconds}] ({c.card_type}) {c.front} -> {c.back}" for c in cards
     )
@@ -215,7 +217,7 @@ def critic_user(transcript_text: str, terms, cards) -> str:
 </transcript>
 
 <terms>
-{_format_terms(terms)}
+{term_lines}
 </terms>
 
 <cards>
