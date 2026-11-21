@@ -81,9 +81,15 @@
     .field { margin-bottom: 26px; }
     /* "Which cards?" choice */
     fieldset.field { border: 0; padding: 0; margin: 0 0 26px; min-width: 0; }
-    .choices { display: flex; gap: 8px 22px; flex-wrap: wrap; font-size: 15px; }
-    .choices label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    .choices input { width: auto; margin: 0; appearance: auto; -webkit-appearance: auto; accent-color: var(--red); }
+    .choices { display: flex; flex-direction: column; gap: 10px; font-size: 15px; }
+    .choices label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    /* Our own radio button: an ink ring on the paper, filled red when picked */
+    .choices input {
+      flex: none; width: 14px; height: 14px; margin: 0; padding: 0;
+      border: 2px solid var(--ink); border-radius: 50%; background: transparent; cursor: pointer;
+    }
+    .choices input:checked { border-color: var(--red); background: radial-gradient(var(--red) 0 3px, transparent 3.5px); }
+    .choices input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
     details { margin-bottom: 28px; }
     summary { cursor: pointer; font-size: 14px; font-style: italic; }
     .label-row { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
