@@ -554,7 +554,7 @@
     const box = (label, input) => [el("label", { className: "field-label", textContent: label }), input];
 
     if (card.card_type !== "cloze") {
-      const front = el("textarea", { rows: 2, value: card.front, placeholder: "e.g. Neural nets: what does a neuron hold?" });
+      const front = el("textarea", { rows: 2, value: card.front, placeholder: "e.g. What does a neuron in a neural network hold?" });
       front.oninput = () => { card.front = front.value; };
       const back = el("textarea", { rows: 2, value: card.back, placeholder: "e.g. A number between 0 and 1" });
       back.oninput = () => { card.back = back.value; };
@@ -580,13 +580,13 @@
       while (card.hiddens.length < blanks) card.hiddens.push("");
       card.hiddens.length = blanks;
       hiddenBoxes.replaceChildren(...card.hiddens.flatMap((value, i) => {
-        const input = el("input", { value, placeholder: i === 0 ? "e.g. $2 million" : "" });
+        const input = el("input", { value, placeholder: i === 0 ? "e.g. layers" : "" });
         input.oninput = () => { card.hiddens[i] = input.value; update(); };
         return box(blanks > 1 ? `Hidden part ${i + 1}` : "Hidden part", input);
       }));
     };
 
-    const sentence = el("textarea", { rows: 2, value: card.sentence, placeholder: "e.g. Training Llama 2 cost about ___." });
+    const sentence = el("textarea", { rows: 2, value: card.sentence, placeholder: "e.g. A neural network's neurons are arranged in ___." });
     sentence.oninput = () => {
       const before = card.sentence.split(BLANK).length;
       card.sentence = sentence.value;
