@@ -260,7 +260,7 @@
   // Everything the page knows lives in `deck`. The server keeps
   // nothing, so the cards exist only here until you download them.
   // ---------------------------------------------------------------
-  const deck = { videoId: "", title: "", cards: [], hasTimestamps: true };
+  const deck = { videoId: "", title: "", cards: [], hasTimestamps: true, retries: [] };
 
   // The visitor's API key. It stays in this variable (in memory, never in
   // browser storage) and is only ever sent to api.anthropic.com, never to
@@ -354,6 +354,7 @@
       // Fewer than 3 terms, or a blank term or definition, means Claude gave up.
       const blank = result.terms.some((t) => !t.term.trim() || !t.definition.trim());
       if (result.terms.length >= 3 && !blank) return result;
+      noteRetry("Vocab step", result.problem);
     }
     throw new Error(gaveUpMessage("a proper list of technical terms", result.problem));
   }
@@ -365,8 +366,16 @@
     for (let attempt = 0; attempt < 2; attempt++) {
       result = await askClaude("cards", inputs);
       if (!cardsLookBlank(result.cards, inputs.ideas.length)) return result.cards;
+      noteRetry("Cards step", result.problem);
     }
     throw new Error(gaveUpMessage("real cards", result.problem));
+  }
+
+  // A step that gave a blank answer and had to be asked again. Shown in the
+  // rules check log, so we can see how often it happens on real runs.
+  function noteRetry(step, problem) {
+    const reason = problem && problem.trim() ? ` Its reason: "${problem.trim()}"` : "";
+    deck.retries.push(`${step} gave a blank answer and was asked again.${reason}`);
   }
 
   // The error when Claude fails a step twice, with its own reason if it gave one.
@@ -446,6 +455,7 @@
       })).json();
       const transcript_text = lecture.transcript_text;
 
+      deck.retries = [];
       stage = "Finding the technical terms (1 of 4)";
       const { terms: draftTerms } = await askForTerms({ transcript_text });
       stage = "Picking the key ideas (2 of 4)";
@@ -490,7 +500,8 @@
       el("summary", { textContent: `Rules check: changed ${changed.length}, cut ${deck.cut.length}` }),
       el("ul", {},
         ...changed.map((card) => el("li", { textContent: `Changed "${card.front}": ${card.note}` })),
-        ...deck.cut.map((line) => el("li", { textContent: `Cut: ${line}` }))));
+        ...deck.cut.map((line) => el("li", { textContent: `Cut: ${line}` })),
+        ...deck.retries.map((line) => el("li", { textContent: `Retry: ${line}` }))));
     renderCards();
     window.scrollTo(0, 0);
   }
@@ -755,7 +766,8 @@
       return card.note ? `${line}\n   Rules check: ${card.note}` : line;
     });
     const changed = deck.cards.filter((card) => card.note).length;
-    lines.unshift(`Rules check: changed ${changed}, cut ${deck.cut.length}`, ...deck.cut.map((c) => `- Cut: ${c}`), "");
+    lines.unshift(`Rules check: changed ${changed}, cut ${deck.cut.length}`, ...deck.cut.map((c) => `- Cut: ${c}`),
+      ...deck.retries.map((r) => `- Retry: ${r}`), "");
     await navigator.clipboard.writeText(lines.join("\n"));
     $("copy-text").textContent = "Copied!";
     setTimeout(() => { $("copy-text").textContent = "Copy all cards as text"; }, 2000);
