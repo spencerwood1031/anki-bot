@@ -310,6 +310,15 @@
     return JSON.parse(message.content.find((block) => block.type === "text").text);
   }
 
+  // Same idea for the terms step: an empty list means Claude gave up.
+  async function askForTerms(inputs) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await askClaude("terms", inputs);
+      if (result.terms.length) return result;
+    }
+    throw new Error("Claude returned no technical terms twice. Please try again.");
+  }
+
   // Now and then Claude answers the cards step with one blank card,
   // so check the answer and ask once more before giving up.
   async function askForCards(inputs) {
@@ -384,7 +393,7 @@
       const transcript_text = lecture.transcript_text;
 
       stage = "Finding the technical terms (1 of 4)";
-      const { terms: draftTerms, topic } = await askClaude("terms", { transcript_text });
+      const { terms: draftTerms, topic } = await askForTerms({ transcript_text });
       stage = "Picking the key ideas (2 of 4)";
       const { ideas } = await askClaude("ideas", { transcript_text, terms: draftTerms });
       stage = "Writing the cards (3 of 4)";
@@ -418,8 +427,10 @@
     $("deck-title").textContent = deck.title;
     $("no-times").hidden = deck.hasTimestamps;
     // For now, while we tune the rules check: show what it cut.
-    $("critic-cuts").hidden = !deck.cut.length;
-    $("critic-cuts").replaceChildren("Rules check cut:",
+    const changed = deck.cards.filter((card) => card.note).length;
+    $("critic-cuts").hidden = false;
+    $("critic-cuts").replaceChildren(
+      `Rules check: changed ${changed} card${changed === 1 ? "" : "s"}, cut ${deck.cut.length}.`,
       el("ul", {}, ...deck.cut.map((line) => el("li", { textContent: line }))));
     renderCards();
     window.scrollTo(0, 0);

@@ -148,13 +148,13 @@ def _ask(client: anthropic.Anthropic, system: str, user: str, output_shape: type
 
 
 def extract_terms(client: anthropic.Anthropic, transcript_text: str) -> TermList:
-    """The lecture's technical terms, plus a short topic label for the card fronts."""
-    return _ask(
-        client,
-        prompts.terms_system(),
-        prompts.terms_user(transcript_text),
-        TermList,
-    )
+    """The lecture's technical terms, plus a short topic label for the card fronts.
+    An empty list means Claude gave up, so we ask once more."""
+    for attempt in range(2):
+        result = _ask(client, prompts.terms_system(), prompts.terms_user(transcript_text), TermList)
+        if result.terms:
+            return result
+    raise RuntimeError("Claude returned no technical terms twice. Please try again.")
 
 
 def pick_ideas(client: anthropic.Anthropic, transcript_text: str, terms: list[Term]) -> list[Idea]:
