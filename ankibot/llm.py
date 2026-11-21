@@ -48,6 +48,7 @@ class Term(BaseModel):
 
 
 class TermList(BaseModel):
+    problem: str         # "" normally; if Claude can't do the job, why not
     terms: list[Term]
 
 
@@ -69,6 +70,7 @@ class Card(BaseModel):
 
 
 class CardList(BaseModel):
+    problem: str         # "" normally; if Claude can't do the job, why not
     cards: list[Card]
 
 
@@ -154,7 +156,13 @@ def extract_terms(client: anthropic.Anthropic, transcript_text: str) -> TermList
         result = _ask(client, prompts.terms_system(), prompts.terms_user(transcript_text), TermList)
         if not terms_look_blank(result.terms):
             return result
-    raise RuntimeError("Claude didn't return a proper list of technical terms, twice. Please try again.")
+    raise RuntimeError(gave_up_message("a proper list of technical terms", result.problem))
+
+
+def gave_up_message(what: str, problem: str) -> str:
+    """The error shown when Claude fails a step twice, with its own reason if it gave one."""
+    reason = f' Its reason: "{problem.strip()}"' if problem.strip() else ""
+    return f"Claude didn't return {what}, twice.{reason} Please try again."
 
 
 def terms_look_blank(terms: list[Term]) -> bool:
@@ -188,7 +196,7 @@ def draft_cards(client: anthropic.Anthropic, transcript_text: str, ideas: list[I
         )
         if not cards_look_blank(result.cards, len(ideas)):
             return result.cards
-    raise RuntimeError("Claude returned blank cards twice. Please try again.")
+    raise RuntimeError(gave_up_message("real cards", result.problem))
 
 
 def review_deck(client: anthropic.Anthropic, transcript_text: str, terms: list[Term], cards: list[Card]) -> Review:

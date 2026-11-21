@@ -348,23 +348,31 @@
 
   // Same idea for the terms step: an empty list means Claude gave up.
   async function askForTerms(inputs) {
+    let result;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const result = await askClaude("terms", inputs);
+      result = await askClaude("terms", inputs);
       // Fewer than 3 terms, or a blank term or definition, means Claude gave up.
       const blank = result.terms.some((t) => !t.term.trim() || !t.definition.trim());
       if (result.terms.length >= 3 && !blank) return result;
     }
-    throw new Error("Claude didn't return a proper list of technical terms, twice. Please try again.");
+    throw new Error(gaveUpMessage("a proper list of technical terms", result.problem));
   }
 
   // Now and then Claude answers the cards step with one blank card,
   // so check the answer and ask once more before giving up.
   async function askForCards(inputs) {
+    let result;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const { cards } = await askClaude("cards", inputs);
-      if (!cardsLookBlank(cards, inputs.ideas.length)) return cards;
+      result = await askClaude("cards", inputs);
+      if (!cardsLookBlank(result.cards, inputs.ideas.length)) return result.cards;
     }
-    throw new Error("Claude returned blank cards twice. Please try again.");
+    throw new Error(gaveUpMessage("real cards", result.problem));
+  }
+
+  // The error when Claude fails a step twice, with its own reason if it gave one.
+  function gaveUpMessage(what, problem) {
+    const reason = problem && problem.trim() ? ` Its reason: "${problem.trim()}"` : "";
+    return `Claude didn't return ${what}, twice.${reason} Please try again.`;
   }
 
   // The critic pass: Claude checks the draft against the card rules and
