@@ -212,7 +212,6 @@
       <span id="card-count" class="count"></span>
     </div>
     <p class="hint">Edit any card, delete the ones you don't want, or add your own. "Suggest a better version" asks Claude to rewrite a card to follow good flashcard rules.</p>
-    <div id="critic-cuts" class="hint" hidden></div>
     <p id="no-times" class="hint" hidden>The pasted transcript had no timestamps, so the cards can't link to the right moment in the video. Paste it with its timestamps for working links, or type a time on any card.</p>
     <div id="card-list"></div>
 
@@ -235,6 +234,7 @@
       <button id="download" class="primary" type="button">Download deck</button>
     </div>
     <p id="review-status" role="status" hidden></p>
+    <details id="critic-log" class="key-info" hidden></details>
   </section>
 
   <footer>Open the downloaded .apkg file with <a href="https://apps.ankiweb.net" target="_blank" rel="noopener">Anki</a> to import it.</footer>
@@ -449,11 +449,16 @@
     $("deck-title").textContent = deck.title;
     $("no-times").hidden = deck.hasTimestamps;
     // For now, while we tune the rules check: show what it cut.
-    const changed = deck.cards.filter((card) => card.note).length;
-    $("critic-cuts").hidden = false;
-    $("critic-cuts").replaceChildren(
-      `Rules check: changed ${changed} card${changed === 1 ? "" : "s"}, cut ${deck.cut.length}.`,
-      el("ul", {}, ...deck.cut.map((line) => el("li", { textContent: line }))));
+    // What the rules check did, tucked away at the bottom: it's for tuning
+    // the prompts, not something a visitor needs to read.
+    const changed = deck.cards.filter((card) => card.note);
+    $("critic-log").hidden = false;
+    $("critic-log").open = false;
+    $("critic-log").replaceChildren(
+      el("summary", { textContent: `Rules check: changed ${changed.length}, cut ${deck.cut.length}` }),
+      el("ul", {},
+        ...changed.map((card) => el("li", { textContent: `Changed "${card.front}": ${card.note}` })),
+        ...deck.cut.map((line) => el("li", { textContent: `Cut: ${line}` }))));
     renderCards();
     window.scrollTo(0, 0);
   }
@@ -603,7 +608,6 @@
         card.start_seconds > 0 || deck.hasTimestamps ? watch : "",
         el("span", { className: "spacer" }), suggestButton, deleteButton),
       ...editorFields(card),
-      card.note ? el("p", { className: "hint", textContent: `Rules check: ${card.note}` }) : "",
       card.error ? el("p", { className: "error-note", textContent: card.error }) : "",
       card.suggestion ? renderSuggestion(card, index) : "");
   }
@@ -718,7 +722,8 @@
       const line = `#${i + 1} ${card.front}` + (card.back ? ` -> ${card.back}` : "");
       return card.note ? `${line}\n   Rules check: ${card.note}` : line;
     });
-    if (deck.cut && deck.cut.length) lines.unshift("Rules check cut:", ...deck.cut.map((c) => `- ${c}`), "");
+    const changed = deck.cards.filter((card) => card.note).length;
+    lines.unshift(`Rules check: changed ${changed}, cut ${deck.cut.length}`, ...deck.cut.map((c) => `- Cut: ${c}`), "");
     await navigator.clipboard.writeText(lines.join("\n"));
     $("copy-text").textContent = "Copied!";
     setTimeout(() => { $("copy-text").textContent = "Copy all cards as text"; }, 2000);
