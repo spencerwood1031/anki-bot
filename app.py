@@ -20,7 +20,10 @@ The server keeps nothing between requests: the cards live on the page until
 the visitor downloads them.
 """
 
+import base64
+import hashlib
 import json
+import re
 import tempfile
 import urllib.parse
 import urllib.request
@@ -40,22 +43,41 @@ PAGE = Path(__file__).parent / "templates" / "index.html"
 # About 3 hours of speech is roughly this many characters.
 MAX_TRANSCRIPT_CHARS = 200_000
 
-# Rules the browser enforces on our page. The important one is connect-src:
-# the page may only send data to this server and to Claude's API, so even a
-# bug or an injected script couldn't send a visitor's key anywhere else.
-SECURITY_HEADERS = {
-    "Content-Security-Policy": (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "  # Libre Franklin, as on spencerjwood.com
-        "font-src https://fonts.gstatic.com; "
-        "connect-src 'self' https://api.anthropic.com; "
-        "img-src 'self' data: https://spencerjwood.com; "  # the favicon
-        "base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
-    ),
-    "Referrer-Policy": "no-referrer",
-    "X-Content-Type-Options": "nosniff",
-}
+def page_script_hash() -> str:
+    """A fingerprint of the page's one <script> block, for the security policy below.
+
+    The browser runs a script only if its fingerprint matches, so a script that
+    sneaks into the page some other way (say, inside a card's text) won't run.
+    Worked out from the file on every request, so editing the page can't break it.
+    """
+    script = re.search(r"<script>(.*?)</script>", PAGE.read_text(), re.DOTALL).group(1)
+    digest = hashlib.sha256(script.encode()).digest()
+    return "'sha256-" + base64.b64encode(digest).decode() + "'"
+
+
+def security_headers() -> dict:
+    """Rules the browser enforces on our page, mostly to protect visitors' API keys.
+
+    - script-src: only our own page's script may run, nothing injected.
+    - connect-src: the page may only send data to this server and to Claude's API,
+      so even a bug couldn't send a visitor's key anywhere else.
+    - Strict-Transport-Security: always use https, so nobody on the visitor's
+      wifi can read or change the page on its way to them.
+    """
+    return {
+        "Content-Security-Policy": (
+            "default-src 'self'; "
+            f"script-src {page_script_hash()}; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "  # Libre Franklin, as on spencerjwood.com
+            "font-src https://fonts.gstatic.com; "
+            "connect-src 'self' https://api.anthropic.com; "
+            "img-src 'self' data: https://spencerjwood.com; "  # the favicon
+            "base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'"
+        ),
+        "Strict-Transport-Security": "max-age=31536000",
+        "Referrer-Policy": "no-referrer",
+        "X-Content-Type-Options": "nosniff",
+    }
 
 
 class UserError(Exception):
@@ -64,7 +86,7 @@ class UserError(Exception):
 
 @app.after_request
 def add_security_headers(response):
-    response.headers.update(SECURITY_HEADERS)
+    response.headers.update(security_headers())
     return response
 
 
