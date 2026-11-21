@@ -128,8 +128,10 @@
     .card-top { display: flex; gap: 8px 16px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; font-size: 13px; }
     .card-top .num { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--red); }
     .card-top .spacer { flex: 1; }
-    .card-top a { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; border-bottom: 2px solid var(--soft); }
-    .card-top a:hover { border-bottom-color: var(--red); }
+    .card-foot { display: flex; justify-content: flex-end; align-items: center; gap: 16px; font-size: 13px; }
+    .card-foot input.time { margin-bottom: 0; }
+    .card-top a, .card-foot a { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; border-bottom: 2px solid var(--soft); }
+    .card-top a:hover, .card-foot a:hover { border-bottom-color: var(--red); }
     input.time { width: 56px; padding: 4px 0; font-size: 13px; border-bottom-width: 1px; }
     .card textarea { margin-bottom: 14px; }
     .card input { margin-bottom: 14px; }
@@ -626,12 +628,6 @@
   }
 
   function renderCard(card, index) {
-    const typeSelect = el("select", { ariaLabel: "Card type" },
-      el("option", { value: "basic", textContent: "Question / answer" }),
-      el("option", { value: "cloze", textContent: "Fill in the blank" }));
-    typeSelect.value = card.card_type;
-    typeSelect.onchange = () => { changeType(card, typeSelect.value); renderCards(); };
-
     const time = el("input", { className: "time", value: formatTime(card.start_seconds || 0), ariaLabel: "Time in video" });
     time.onchange = () => { card.start_seconds = parseTime(time.value); renderCards(); };
     const watch = el("a", {
@@ -642,17 +638,19 @@
     const suggestButton = el("button", { className: "small-btn", type: "button",
       textContent: card.loading ? "Thinking..." : "Redo card", disabled: !!card.loading });
     suggestButton.onclick = () => suggestFor(card);
-    const deleteButton = el("button", { className: "small-btn", type: "button", textContent: "Delete" });
+    const deleteButton = el("button", { className: "small-btn", type: "button", textContent: "Delete card" });
     deleteButton.onclick = () => { deck.cards.splice(index, 1); renderCards(); };
 
     return el("div", { className: "card" },
       el("div", { className: "card-top" },
-        el("span", { className: "num", textContent: `#${index + 1}` }), typeSelect, time,
-        card.start_seconds > 0 || deck.hasTimestamps ? watch : "",
+        el("span", { className: "num", textContent: `#${index + 1}` }),
         el("span", { className: "spacer" }), suggestButton, deleteButton),
       ...editorFields(card),
       card.error ? el("p", { className: "error-note", textContent: card.error }) : "",
-      card.suggestion ? renderSuggestion(card, index) : "");
+      card.suggestion ? renderSuggestion(card, index) : "",
+      // The card's moment in the video, tucked in the bottom corner.
+      el("div", { className: "card-foot" }, time,
+        card.start_seconds > 0 || deck.hasTimestamps ? watch : ""));
   }
 
   // Claude's suggested rewrite, shown under the card, with "Use this" / "Keep mine".
