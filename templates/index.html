@@ -350,9 +350,11 @@
   async function askForTerms(inputs) {
     for (let attempt = 0; attempt < 2; attempt++) {
       const result = await askClaude("terms", inputs);
-      if (result.terms.length) return result;
+      // Fewer than 3 terms, or a blank term or definition, means Claude gave up.
+      const blank = result.terms.some((t) => !t.term.trim() || !t.definition.trim());
+      if (result.terms.length >= 3 && !blank) return result;
     }
-    throw new Error("Claude returned no technical terms twice. Please try again.");
+    throw new Error("Claude didn't return a proper list of technical terms, twice. Please try again.");
   }
 
   // Now and then Claude answers the cards step with one blank card,
