@@ -81,9 +81,15 @@
     .field { margin-bottom: 26px; }
     /* "Which cards?" choice */
     fieldset.field { border: 0; padding: 0; margin: 0 0 26px; min-width: 0; }
-    .choices { display: flex; gap: 8px 22px; flex-wrap: wrap; font-size: 15px; }
-    .choices label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    .choices input { width: auto; margin: 0; appearance: auto; -webkit-appearance: auto; accent-color: var(--red); }
+    .choices { display: flex; flex-direction: column; gap: 10px; font-size: 15px; }
+    .choices label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    /* Our own checkbox: an ink square on the paper, red with a red center when ticked */
+    .choices input {
+      flex: none; width: 14px; height: 14px; margin: 0; padding: 0;
+      border: 2px solid var(--ink); border-radius: 0; background: transparent; cursor: pointer;
+    }
+    .choices input:checked { border-color: var(--red); background: var(--red); box-shadow: inset 0 0 0 2px var(--paper); }
+    .choices input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
     details { margin-bottom: 28px; }
     summary { cursor: pointer; font-size: 14px; font-style: italic; }
     .label-row { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
@@ -233,14 +239,13 @@
     <fieldset class="field">
       <legend class="label">Cards to make</legend>
       <div class="choices">
-        <label><input type="radio" name="card-kinds" value="both" checked> Vocabulary and main ideas</label>
-        <label><input type="radio" name="card-kinds" value="vocab"> Vocabulary only</label>
-        <label><input type="radio" name="card-kinds" value="ideas"> Main ideas only</label>
+        <label><input type="checkbox" id="want-vocab" checked> Vocabulary</label>
+        <label><input type="checkbox" id="want-ideas" checked> Main ideas</label>
       </div>
     </fieldset>
 
     <details>
-      <summary>Video won't load? Paste the transcript instead.</summary>
+      <summary>Paste the transcript instead</summary>
       <ol class="hint">
         <li>On YouTube, open the video's description and click "Show transcript".</li>
         <li>Make sure each line starts with a time like 0:04. If not, click the ⋮ at the top of the transcript and choose "Toggle timestamps". The times let each card link to its moment in the video.</li>
@@ -483,6 +488,7 @@
     try {
       apiKey = $("api-key").value.trim();
       if (!apiKey) throw new Error("Paste your Anthropic API key.");
+      if (!$("want-vocab").checked && !$("want-ideas").checked) throw new Error("Tick at least one kind of card to make.");
       await checkKey();  // fail fast on a bad key
 
       stage = "Getting the transcript";
@@ -492,11 +498,10 @@
       })).json();
       const transcript_text = lecture.transcript_text;
 
-      // Which cards the visitor asked for: "both", "vocab" or "ideas".
-      // The terms are found either way: the main-idea steps use them too.
-      const kinds = document.querySelector("input[name=card-kinds]:checked").value;
-      const wantVocab = kinds !== "ideas";
-      const wantIdeas = kinds !== "vocab";
+      // Which cards the visitor asked for. The terms are found either way:
+      // the main-idea steps use them too.
+      const wantVocab = $("want-vocab").checked;
+      const wantIdeas = $("want-ideas").checked;
       const steps = wantIdeas ? 4 : 2;
 
       deck.retries = [];
