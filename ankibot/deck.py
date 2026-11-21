@@ -43,14 +43,15 @@ CLOZE_MODEL = genanki.Model(
 )
 
 
-def build_deck(video_id: str, title: str, cards: list[dict], path: str) -> None:
-    """Write cards (dicts with card_type, front, back, source_url) to an .apkg."""
-    # A stable deck id per video, so re-importing updates the same deck.
-    deck_id = zlib.crc32(video_id.encode())
+def build_deck(deck_key: str, title: str, cards: list[dict], path: str) -> None:
+    """Write cards (dicts with card_type, front, back, source_url) to an .apkg.
+    deck_key is the video id (or page link): the same key gives the same deck,
+    so re-importing updates it instead of making a copy."""
+    deck_id = zlib.crc32(deck_key.encode())
     deck = genanki.Deck(deck_id, title)
 
     for card in cards:
-        source = f'<a href="{card["source_url"]}">Watch this part</a>'
+        source = f'<a href="{card["source_url"]}">Watch this part</a>' if card.get("source_url") else ""
         if card["card_type"] == "cloze":
             note = genanki.Note(model=CLOZE_MODEL, fields=[card["front"], card["back"], source])
         else:
