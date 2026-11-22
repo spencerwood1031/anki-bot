@@ -54,8 +54,14 @@
 
     main { max-width: 640px; color: var(--ink); }
     .steps {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
-      list-style: none; margin: 0 0 30px; padding: 0 0 20px; border-bottom: 2px solid var(--red);
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 44px;
+      list-style: none; margin: 0 0 34px; padding: 16px 18px; border: 2px solid var(--red);
+    }
+    .steps li { position: relative; }
+    /* Arrow in the gap between two steps */
+    .steps li + li::before {
+      content: "→"; position: absolute; left: -34px; top: 50%; transform: translateY(-50%);
+      color: var(--red); font-size: 22px; line-height: 1;
     }
     .steps .num { display: block; color: var(--red); font-size: 13px; font-weight: 700; }
     .steps .name { display: block; color: var(--red); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin: 2px 0 6px; }
@@ -180,8 +186,9 @@
       .page > aside { position: static; }
       header h1 { font-size: clamp(26px, 8.4vw, 38px); }
       nav { flex-direction: row; flex-wrap: wrap; gap: 8px 20px; margin-top: 20px; padding-bottom: 20px; border-bottom: 2px solid var(--red); }
-      .steps { gap: 14px; }
-      .steps .line { font-size: 14px; }
+      /* Phones: steps stack, arrows point down */
+      .steps { grid-template-columns: 1fr; gap: 30px; }
+      .steps li + li::before { content: "↓"; left: 0; top: -26px; transform: none; }
     }
   </style>
 </head>
