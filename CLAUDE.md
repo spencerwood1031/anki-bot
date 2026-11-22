@@ -18,7 +18,7 @@ Pipeline: YouTube URL → timestamped transcript → technical terms → up to 1
 Distilled from Andy Matuschak's "How to write good prompts" and Piotr Wozniak's "20 rules of formulating knowledge".
 
 1. **One idea per card.** Never stitch several clauses into one answer. Extra details go on their own cards.
-2. **Why/how over cloze.** Prefer genuine why/how questions. Use cloze only for bare facts like a term or a number.
+2. **Why/how over cloze.** Prefer genuine why/how questions. Use cloze only for bare facts like a term or a number. A famous quote is a cloze in this form: the quote with one key word blanked, then a dash, the speaker's name and the context in parentheses. "Give me liberty, or give me {{c1::death}}!" – Patrick Henry (urging Virginia to join the American Revolution).
 3. **Sharp why/how.** A why-question needs a specific mechanism as its answer, not a vague one. "Why use bones in stock?" invites "they're cheap"; "How do bones give stock its rich texture?" doesn't.
 4. **Precise.** The question must rule out other reasonable answers, so the answer is the same on every review, and short enough to be clearly right or wrong.
 5. **No yes/no questions.** Reframe them as open questions.
