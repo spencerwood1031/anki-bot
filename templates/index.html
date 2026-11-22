@@ -53,11 +53,14 @@
     nav a.active { border-bottom-color: var(--red); }
 
     main { max-width: 640px; color: var(--ink); }
-    .sub {
-      margin: 0 0 30px; padding-bottom: 18px; border-bottom: 2px solid var(--red);
-      font-size: 18px; font-style: italic; line-height: 1.4;
+    .steps {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+      list-style: none; margin: 0 0 30px; padding: 0 0 20px; border-bottom: 2px solid var(--red);
     }
-    ol.sub { padding-left: 0; list-style-position: inside; }
+    .steps .num { display: block; color: var(--red); font-size: 13px; font-weight: 700; }
+    .steps .name { display: block; color: var(--red); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin: 2px 0 6px; }
+    .steps .line { display: block; font-size: 15px; line-height: 1.4; }
+    .nowrap { white-space: nowrap; }
     .label { display: block; color: var(--ink); margin: 0 0 6px; }
     .hint { color: var(--ink); font-size: 13px; line-height: 1.5; margin-top: 8px; }
     .hint a { color: var(--red); }
@@ -177,7 +180,8 @@
       .page > aside { position: static; }
       header h1 { font-size: clamp(26px, 8.4vw, 38px); }
       nav { flex-direction: row; flex-wrap: wrap; gap: 8px 20px; margin-top: 20px; padding-bottom: 20px; border-bottom: 2px solid var(--red); }
-      .sub { font-size: 17px; }
+      .steps { gap: 14px; }
+      .steps .line { font-size: 14px; }
     }
   </style>
 </head>
@@ -199,10 +203,10 @@
   </aside>
 
 <main>
-  <ol class="sub">
-    <li>Watch an interesting lecture</li>
-    <li>Generate flashcards</li>
-    <li>Retain new content in long-term memory</li>
+  <ol class="steps">
+    <li><span class="num">01</span><span class="name">Watch</span><span class="line">Pick an interesting lecture</span></li>
+    <li><span class="num">02</span><span class="name">Generate</span><span class="line">Create flashcards for main ideas</span></li>
+    <li><span class="num">03</span><span class="name">Study</span><span class="line">Encode information in <span class="nowrap">long-term</span> memory</span></li>
   </ol>
 
   <section id="start-view">
