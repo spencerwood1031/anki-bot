@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Anki Bot (Beta) · Spencer Wood</title>
+  <title>Anki Bot · Spencer Wood</title>
   <meta name="description" content="Turn a YouTube lecture into an Anki deck.">
   <link rel="icon" href="https://spencerjwood.com/favicon.ico" sizes="any">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,6 @@
       --soft: #f7b5b2;
       --ink: #000;
       --faint: rgba(0, 0, 0, 0.15);
-      --muted: rgba(0, 0, 0, 0.6);
       --font: "Libre Franklin", "Franklin Gothic Medium", "Franklin Gothic", Arial, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -59,12 +58,8 @@
       font-size: 18px; font-style: italic; line-height: 1.4;
     }
     ol.sub { padding-left: 0; list-style-position: inside; }
-    /* The note sits under the steps, above the red rule */
-    ol.sub { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
-    .intro-note { margin: 10px 0 30px; padding-bottom: 18px; border-bottom: 2px solid var(--red); }
-    .label.beta { color: var(--red); margin-bottom: 10px; }
     .label { display: block; color: var(--ink); margin: 0 0 6px; }
-    .hint { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 8px; }
+    .hint { color: var(--ink); font-size: 13px; line-height: 1.5; margin-top: 8px; }
     .hint a { color: var(--red); }
     ol.hint { padding-left: 18px; margin-bottom: 12px; }
 
@@ -161,11 +156,11 @@
     input.time { width: 56px; padding: 4px 0; font-size: 13px; border-bottom-width: 1px; }
     .card textarea { margin-bottom: 14px; }
     .card input { margin-bottom: 14px; }
-    .field-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .field-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
     .problem { color: var(--red); font-size: 13px; margin: -6px 0 12px; }
     /* Claude's suggested rewrite: indented with a pink rule, like the history note on the quotes page */
     .suggestion { margin-top: 4px; padding: 4px 0 4px 16px; border-left: 2px solid var(--soft); font-size: 15px; }
-    .suggestion .why { font-style: italic; color: var(--muted); margin-bottom: 10px; }
+    .suggestion .why { font-style: italic; color: var(--ink); margin-bottom: 10px; }
     .suggestion .s-card { margin-bottom: 10px; }
     .suggestion b { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
     .row { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 4px; }
@@ -204,13 +199,11 @@
   </aside>
 
 <main>
-  <p class="label beta">Beta</p>
   <ol class="sub">
     <li>Watch an interesting lecture</li>
     <li>Generate flashcards</li>
     <li>Retain new content in long-term memory</li>
   </ol>
-  <p class="hint intro-note">Works best with lectures, talks and explainers.</p>
 
   <section id="start-view">
   <form id="deck-form">
