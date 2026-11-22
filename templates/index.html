@@ -166,6 +166,7 @@
     .card textarea { margin-bottom: 14px; }
     .card input { margin-bottom: 14px; }
     .field-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+    .paste-warning { color: var(--red); font-size: 13px; font-weight: 700; margin: 6px 0 12px; }
     .problem { color: var(--red); font-size: 13px; margin: -6px 0 12px; }
     /* Claude's suggested rewrite: indented with a pink rule, like the history note on the quotes page */
     .suggestion { margin-top: 4px; padding: 4px 0 4px 16px; border-left: 2px solid var(--soft); font-size: 15px; }
@@ -322,6 +323,9 @@
   // destination (the Content-Security-Policy header in app.py).
   let apiKey = "";
 
+  // Anything that looks like an Anthropic key, or is the key typed in.
+  const looksLikeKey = (text) => /sk-ant-/i.test(text) || (apiKey && text.includes(apiKey));
+
   const $ = (id) => document.getElementById(id);
 
   function showStatus(element, text, isError) {
@@ -336,7 +340,7 @@
     // Safety net: this goes to our server, which must never see a key. If a
     // key ended up in another box by mistake (say, pasted into the transcript),
     // stop before anything is sent.
-    if (text.includes("sk-ant-") || (apiKey && text.includes(apiKey))) {
+    if (looksLikeKey(text)) {
       throw new Error("That looks like an API key outside the API key box. Remove it and try again.");
     }
     const response = await fetch(path, {
@@ -481,6 +485,23 @@
     $("key-info-button").setAttribute("aria-expanded", String(open));
     $("key-info").hidden = !open;
   }
+  // Pasting something that looks like an API key into any box except the
+  // API key box is blocked, with a warning under that box. Those boxes' text
+  // goes to our server, which must never see a key.
+  document.addEventListener("paste", (event) => {
+    const box = event.target;
+    if (box.id === "api-key" || !box.matches("input, textarea")) return;
+    if (!looksLikeKey(event.clipboardData.getData("text"))) return;
+    event.preventDefault();
+    box.parentElement.querySelectorAll(".paste-warning").forEach((old) => old.remove());
+    const warning = document.createElement("p");
+    warning.className = "paste-warning";
+    warning.setAttribute("role", "alert");
+    warning.textContent = "That looks like an API key, so it wasn't pasted. Your key only goes in the API key box.";
+    box.after(warning);
+    setTimeout(() => warning.remove(), 8000);
+  });
+
   $("key-info-button").addEventListener("click", () => showKeyInfo($("key-info").hidden));
   document.addEventListener("click", (event) => {
     if (!event.target.closest("#key-info, #key-info-button")) showKeyInfo(false);
