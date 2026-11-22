@@ -178,6 +178,7 @@
     .card .error-note { color: var(--red); font-size: 13px; }
     /* The hidden part of a fill-in-the-blank card */
     .blank { background: var(--soft); color: var(--ink); padding: 0 4px; font-weight: 700; }
+    .add-own { margin-top: 8px; }
     .new-card { margin-top: 8px; padding: 22px 0 0; border-top: 2px solid var(--red); }
     .new-card .card-top strong { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); }
     .bottom-bar { display: flex; gap: 12px; margin-top: 32px; }
@@ -284,10 +285,12 @@
     </div>
     <div id="card-list"></div>
 
-    <div class="new-card">
+    <button id="open-new" class="add-own" type="button">+ Add your own card</button>
+    <div class="new-card" id="new-card" hidden>
       <div class="card-top">
         <strong>Add your own card</strong>
         <span class="spacer"></span>
+        <button id="close-new" class="small-btn" type="button">Cancel</button>
         <select id="new-type" aria-label="Card type">
           <option value="basic">Question / answer</option>
           <option value="cloze">Fill in the blank</option>
@@ -824,12 +827,22 @@
   });
   resetDraft();
 
+  // The form stays hidden behind the "+ Add your own card" button until it's needed.
+  function showNewCard(open) {
+    $("new-card").hidden = !open;
+    $("open-new").hidden = open;
+    if (open) $("new-fields").querySelector("textarea").focus();
+  }
+  $("open-new").addEventListener("click", () => showNewCard(true));
+  $("close-new").addEventListener("click", () => { resetDraft(); showNewCard(false); });
+
   $("add-card").addEventListener("click", () => {
     if (!draft.front.trim()) { $("new-fields").querySelector("textarea").focus(); return; }
     const card = { card_type: draft.card_type, front: draft.front.trim(), back: draft.back.trim(),
                    start_seconds: draft.start_seconds, kind: "idea" };
     deck.cards.push(card);
     resetDraft();
+    showNewCard(false);
     suggestFor(card);
   });
 
