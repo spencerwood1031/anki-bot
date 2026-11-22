@@ -162,9 +162,10 @@ Card formats:
 The two vocab cards for each term in the terms list are made separately, from
 the list itself, so don't write them. You write:
 
-1. Main-idea cards: usually one card per key idea, walking through the
-   lecture's main line of reasoning. Only split an idea into two cards when it
-   won't fit one short answer.
+1. Main-idea cards: exactly one card per key idea, walking through the
+   lecture's main line of reasoning. Never split an idea into several cards:
+   if it won't fit one short answer, ask about its most important part and
+   drop the rest.
 2. Leftover cards (rule 15): if a term's short definition leaves out something
    important that no main-idea card covers, one question card for it. Never for
    trivia, and never for something a main-idea card already asks.
