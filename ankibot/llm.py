@@ -65,7 +65,7 @@ class IdeaList(BaseModel):
 class Card(BaseModel):
     card_type: Literal["basic", "cloze"]
     front: str           # basic: the question. cloze: text with {{c1::...}}
-    back: str            # basic: the answer. cloze: optional extra context
+    back: str            # basic: the answer. cloze: always empty
     start_seconds: int   # timestamp the source link will point to
 
 
