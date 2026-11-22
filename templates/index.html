@@ -250,6 +250,11 @@
       </div>
     </fieldset>
 
+    <div class="field">
+      <label class="label" for="context">Additional context</label>
+      <textarea id="context" rows="3" maxlength="2000" placeholder="e.g. I'm a software engineer, so skip basics like GPU or compile.&#10;e.g. New to calculus. I want the core ideas, not the worked examples.&#10;e.g. Studying for a history exam: I need the key dates and people."></textarea>
+    </div>
+
     <details class="paste">
       <summary>Paste the transcript instead</summary>
       <ol class="hint">
@@ -304,7 +309,8 @@
   // nothing, so the cards exist only here until you download them.
   // ---------------------------------------------------------------
   // videoId: a YouTube video. sourceUrl: a page on another site (no timestamps). Both can be "".
-  const deck = { videoId: "", sourceUrl: "", title: "", cards: [], hasTimestamps: true, retries: [] };
+  // context: the visitor's optional "Additional context" note, sent with every Claude step.
+  const deck = { videoId: "", sourceUrl: "", title: "", context: "", cards: [], hasTimestamps: true, retries: [] };
 
   // The visitor's API key. It stays in this variable (in memory, never in
   // browser storage) and is only ever sent to api.anthropic.com, never to
@@ -382,7 +388,7 @@
   // One Claude step: our server builds the request (prompts live in Python),
   // the browser adds the key and sends it to Claude, and we read back the JSON.
   async function askClaude(step, inputs) {
-    const body = await (await postJson("/api/claude-request", { step, ...inputs })).json();
+    const body = await (await postJson("/api/claude-request", { step, context: deck.context, ...inputs })).json();
     const response = await fetchClaude("/v1/messages", { method: "POST", body: JSON.stringify(body) });
     if (!response.ok) throw await claudeError(response);
     const message = await response.json();
@@ -514,6 +520,7 @@
       const steps = wantIdeas ? 4 : 2;
 
       deck.retries = [];
+      deck.context = $("context").value.trim();
       stage = `Finding the technical terms (1 of ${steps})`;
       const { terms: draftTerms } = await askForTerms({ transcript_text });
       let draftCards = [];

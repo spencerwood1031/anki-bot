@@ -273,28 +273,33 @@ def request_body(system: str, user: str, output_shape: type[BaseModel]) -> dict:
 
 def browser_request(step: str, data: dict) -> dict:
     """Build the request for one website step. `data` is what the page sent."""
+    system, user, shape = _step_prompt(step, data)
+    # The visitor's optional "Additional context" box goes on every step.
+    user += prompts.learner_context(data.get("context", ""))
+    return request_body(system, user, shape)
+
+
+def _step_prompt(step: str, data: dict) -> tuple[str, str, type[BaseModel]]:
     if step == "terms":
-        return request_body(prompts.terms_system(), prompts.terms_user(data["transcript_text"]), TermList)
+        return prompts.terms_system(), prompts.terms_user(data["transcript_text"]), TermList
 
     if step == "ideas":
         terms = [Term(**t) for t in data["terms"]]
-        return request_body(prompts.ideas_system(), prompts.ideas_user(data["transcript_text"], terms), IdeaList)
+        return prompts.ideas_system(), prompts.ideas_user(data["transcript_text"], terms), IdeaList
 
     if step == "cards":
         terms = [Term(**t) for t in data["terms"]]
         ideas = IdeaList(ideas=data["ideas"]).ideas
-        user = prompts.cards_user(data["transcript_text"], ideas, terms)
-        return request_body(prompts.cards_system(), user, CardList)
+        return prompts.cards_system(), prompts.cards_user(data["transcript_text"], ideas, terms), CardList
 
     if step == "review":
         terms = [Term(**t) for t in data["terms"]]
         cards = [Card(**c) for c in data["cards"]]
-        user = prompts.critic_user(data["transcript_text"], terms, cards)
-        return request_body(prompts.critic_system(), user, Review)
+        return prompts.critic_system(), prompts.critic_user(data["transcript_text"], terms, cards), Review
 
     if step == "suggest":
         card = SuggestedCard(**data["card"])
-        return request_body(prompts.suggest_system(), prompts.suggest_user(card, data["title"]), Suggestion)
+        return prompts.suggest_system(), prompts.suggest_user(card, data["title"]), Suggestion
 
     raise ValueError(f"Unknown step: {step}")
 
