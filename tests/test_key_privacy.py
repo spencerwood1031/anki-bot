@@ -51,7 +51,14 @@ class KeyPrivacyTest(unittest.TestCase):
         # Every request to our server goes through postJson, which stops if
         # the data holds a key (a visitor pasting it into the wrong box).
         page = PAGE.read_text()
-        self.assertIn('text.includes("sk-ant-")', page)
+        self.assertIn("if (looksLikeKey(text))", page)
+        self.assertIn("/sk-ant-/i.test(text)", page)
+
+    def test_page_blocks_pasting_a_key_into_other_boxes(self):
+        # A key pasted into the transcript, URL or a card box is stopped right away.
+        page = PAGE.read_text()
+        self.assertIn('document.addEventListener("paste"', page)
+        self.assertIn('if (box.id === "api-key"', page)
         self.assertEqual(page.count("fetch("), 2)  # postJson (us) and fetchClaude (Anthropic)
 
     def test_site_insists_on_https(self):
