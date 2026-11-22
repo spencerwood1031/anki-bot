@@ -52,10 +52,13 @@ def build_deck(deck_key: str, title: str, cards: list[dict], path: str) -> None:
 
     for card in cards:
         source = f'<a href="{card["source_url"]}">Watch this part</a>' if card.get("source_url") else ""
+        # A hidden Anki tag says which kind of card it is, so it can be filtered in Anki.
+        tags = ["vocab"] if card.get("kind") == "vocab" else ["main-idea"]
         if card["card_type"] == "cloze":
-            note = genanki.Note(model=CLOZE_MODEL, fields=[card["front"], card["back"], source])
+            # No extra context on fill-in-the-blank cards.
+            note = genanki.Note(model=CLOZE_MODEL, fields=[card["front"], "", source], tags=tags)
         else:
-            note = genanki.Note(model=BASIC_MODEL, fields=[card["front"], card["back"], source])
+            note = genanki.Note(model=BASIC_MODEL, fields=[card["front"], card["back"], source], tags=tags)
         deck.add_note(note)
 
     genanki.Package(deck).write_to_file(path)

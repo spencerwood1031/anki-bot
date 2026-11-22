@@ -157,7 +157,7 @@ Follow these rules for every card:
 Card formats:
 - "basic": front is a question, back is the answer.
 - "cloze": front is a sentence with the hidden part written as {{{{c1::hidden text}}}},
-  back is optional extra context (may be empty).
+  back is always empty ("").
 
 The two vocab cards for each term in the terms list are made separately, from
 the list itself, so don't write them. You write:
@@ -262,7 +262,7 @@ Rewrite it so it follows these rules:
 Card formats:
 - "basic": front is a question, back is the answer.
 - "cloze": front is a sentence with the hidden part written as {{{{c1::hidden text}}}},
-  back is optional extra context (may be empty).
+  back is always empty ("").
 
 Keep the student's meaning and facts; don't add new information. If the card
 already follows the rules, return it unchanged and say so. If it holds several

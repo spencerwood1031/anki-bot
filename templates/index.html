@@ -155,6 +155,7 @@
     .count { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); }
     .card { padding: 22px 0; border-top: 1px solid var(--faint); }
     #card-list { margin-top: 18px; }
+    .group { margin: 28px 0 0; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); }
     .card-top { display: flex; gap: 8px 16px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; font-size: 13px; }
     .card-top .num { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--red); }
     .card-top .spacer { flex: 1; }
@@ -558,10 +559,10 @@
       stage = `Checking the cards against the rules (${steps} of ${steps})`;
       const review = await reviewDeck({ transcript_text, terms: draftTerms, cards: draftCards });
       const { terms, cut } = review;
-      const cards = wantIdeas ? review.cards : [];
+      const cards = wantIdeas ? review.cards.map((c) => ({ ...c, kind: "idea" })) : [];
       // Two vocab cards per term, built by our server from the terms list.
       const vocab = wantVocab
-        ? (await (await postJson("/api/vocab-cards", { terms })).json()).cards
+        ? (await (await postJson("/api/vocab-cards", { terms })).json()).cards.map((c) => ({ ...c, kind: "vocab" }))
         : [];
 
       deck.videoId = lecture.video_id;
@@ -690,14 +691,11 @@
       if (card.sentence.split(BLANK).length !== before) drawHiddenBoxes();
       update();
     };
-    const extra = el("textarea", { rows: 1, value: card.back, placeholder: "Optional: shown with the answer" });
-    extra.oninput = () => { card.back = extra.value; };
     drawHiddenBoxes();
     update();
     return [
       ...box("Sentence (___ marks each blank)", sentence),
       hiddenBoxes, problem,
-      ...box("Extra context", extra),
     ];
   }
 
@@ -718,7 +716,16 @@
 
   function renderCards() {
     const list = $("card-list");
-    list.replaceChildren(...deck.cards.map(renderCard));
+    // A heading above the vocab cards and above the main-idea cards.
+    const kindOf = (card) => (card.kind === "vocab" ? "vocab" : "idea");
+    const nodes = [];
+    deck.cards.forEach((card, i) => {
+      if (i === 0 || kindOf(deck.cards[i - 1]) !== kindOf(card)) {
+        nodes.push(el("h3", { className: "group", textContent: kindOf(card) === "vocab" ? "Vocabulary" : "Main ideas" }));
+      }
+      nodes.push(renderCard(card, i));
+    });
+    list.replaceChildren(...nodes);
     $("card-count").textContent = `${deck.cards.length} cards`;
   }
 
@@ -768,7 +775,7 @@
       textContent: s.cards.length > 1 ? `Use these ${s.cards.length} new cards` : "Use new" });
     useButton.onclick = () => {
       // Replace the card with the suggestion (it may split into several cards).
-      const replacements = s.cards.map((c) => ({ ...c, start_seconds: card.start_seconds }));
+      const replacements = s.cards.map((c) => ({ ...c, start_seconds: card.start_seconds, kind: card.kind }));
       deck.cards.splice(index, 1, ...replacements);
       renderCards();
     };
@@ -780,8 +787,7 @@
       el("p", { className: "why", textContent: s.why }),
       ...(unchanged ? [] : s.cards.map((c) => c.card_type === "cloze"
         ? el("p", { className: "s-card" },
-            el("b", { textContent: "Fill in the blank: " }), ...readableFront(c),
-            ...(c.back ? [el("br"), el("b", { textContent: "Extra: " }), c.back] : []))
+            el("b", { textContent: "Fill in the blank: " }), ...readableFront(c))
         : el("p", { className: "s-card" },
             el("b", { textContent: "Question: " }), c.front, el("br"),
             el("b", { textContent: "Answer: " }), c.back || "(empty)"))),
@@ -821,7 +827,7 @@
   $("add-card").addEventListener("click", () => {
     if (!draft.front.trim()) { $("new-fields").querySelector("textarea").focus(); return; }
     const card = { card_type: draft.card_type, front: draft.front.trim(), back: draft.back.trim(),
-                   start_seconds: draft.start_seconds };
+                   start_seconds: draft.start_seconds, kind: "idea" };
     deck.cards.push(card);
     resetDraft();
     suggestFor(card);
@@ -844,8 +850,8 @@
         video_id: deck.videoId,
         source_url: deck.sourceUrl,
         title: deck.title,
-        cards: deck.cards.map(({ card_type, front, back, start_seconds }) =>
-          ({ card_type, front, back, start_seconds })),
+        cards: deck.cards.map(({ card_type, front, back, start_seconds, kind }) =>
+          ({ card_type, front, back, start_seconds, kind })),
       });
       const blob = await response.blob();
       const header = response.headers.get("Content-Disposition") || "";
