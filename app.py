@@ -37,6 +37,12 @@ from ankibot import deck, llm, transcript
 from ankibot.links import timestamp_url
 
 app = Flask(__name__)
+# Keep JSON keys in the order we wrote them. Flask sorts them by default, which
+# reorders the answer format we send Claude: a term's "definition" came before
+# the "term" itself, and a card's "back" before its "front". Claude writes its
+# answer in that order, and asked for a definition before naming the term it
+# would often give up with a blank placeholder.
+app.json.sort_keys = False
 PAGE = Path(__file__).parent / "templates" / "index.html"
 
 # Long lectures cost the visitor more and can exceed what Claude reads in one go.
