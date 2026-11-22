@@ -737,14 +737,14 @@
     return "";
   }
 
-  // Claude's suggested rewrite, shown under the card, with "Use this" / "Keep mine".
+  // Claude's suggested rewrite, shown under the card, with "Use new" / "Keep original".
   function renderSuggestion(card, index) {
     const s = card.suggestion;
     const unchanged = s.cards.length === 1 &&
       s.cards[0].front === card.front && s.cards[0].back === card.back;
 
     const useButton = el("button", { className: "small-btn", type: "button",
-      textContent: s.cards.length > 1 ? `Use these ${s.cards.length} cards` : "Use this" });
+      textContent: s.cards.length > 1 ? `Use these ${s.cards.length} new cards` : "Use new" });
     useButton.onclick = () => {
       // Replace the card with the suggestion (it may split into several cards).
       const replacements = s.cards.map((c) => ({ ...c, start_seconds: card.start_seconds }));
@@ -752,7 +752,7 @@
       renderCards();
     };
     const keepButton = el("button", { className: "small-btn", type: "button",
-      textContent: unchanged ? "OK" : "Keep mine" });
+      textContent: unchanged ? "OK" : "Keep original" });
     keepButton.onclick = () => { delete card.suggestion; renderCards(); };
 
     return el("div", { className: "suggestion" },
