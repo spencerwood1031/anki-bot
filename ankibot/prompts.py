@@ -160,7 +160,7 @@ between concepts. The goal is long-term memory of the subject itself.
 These are the rules the main-idea cards must follow. Choose the ideas so that
 one card per idea will satisfy every one of them:
 
-{rules([9, 10, 18, 20])}
+{rules([9, 10, 18, 20, 23])}
 
 So before you answer, check your list:
 - Each idea must be clearly different from every other. If two ideas would
@@ -212,7 +212,8 @@ the list itself, so don't write them. You write:
 1. Main-idea cards: exactly one card per key idea, walking through the
    lecture's main line of reasoning. Never split an idea into several cards:
    if it won't fit one short answer, ask about its most important part and
-   drop the rest.
+   drop the rest. The one exception is a key formula: it gets the cards of
+   rule 23.
 2. Leftover cards (rule 15): if a term's short definition leaves out something
    important that no main-idea card covers, one question card for it. Never for
    trivia, and never for something a main-idea card already asks.
