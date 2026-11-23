@@ -42,3 +42,26 @@ def test_answers_never_end_with_a_period():
     assert no_end_period("It trails off...") == "It trails off..."
     assert no_end_period("The U.S.") == "The U.S."
     assert no_end_period("$x = 1.$") == "$x = 1.$"
+
+
+def test_notes_reach_every_step_only_when_given():
+    from ankibot import llm
+    # The website's "Your notes" box: added to every step, with or without extra ideas.
+    data = {"transcript_text": "[0] hi", "terms": [], "ideas": [], "cards": [], "notes": "Softmax: makes probabilities"}
+    for step in ["terms", "ideas", "cards", "review"]:
+        content = llm.browser_request(step, data)["messages"][0]["content"]
+        assert "<learner_notes>" in content and "Softmax: makes probabilities" in content
+        assert "at most 5 extra ideas" in content
+    data["notes_extras"] = False
+    assert "Add no ideas or terms beyond the notes" in llm.browser_request("ideas", data)["messages"][0]["content"]
+    data["notes"] = "  "
+    assert "learner_notes" not in llm.browser_request("terms", data)["messages"][0]["content"]
+
+
+def test_cards_carry_not_in_notes():
+    from ankibot import llm
+    # Extra ideas keep their mark through the card writer and the rules check.
+    schema = llm.browser_request("review", {"transcript_text": "", "terms": [], "cards": []})["output_config"]["format"]["schema"]
+    assert "not_in_notes" in str(schema)
+    card = llm.Card(card_type="basic", front="Q", back="A", start_seconds=0, not_in_notes=True)
+    assert "(not in notes)" in llm.prompts.critic_user("", [], [card])

@@ -30,7 +30,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 load_dotenv(ROOT / ".env")
 
-from ankibot import llm, transcript  # noqa: E402
+from ankibot import llm, prompts, transcript  # noqa: E402
 from make_deck import build_cards  # noqa: E402
 
 
@@ -80,7 +80,8 @@ def score_run(client, transcript_text: str, key: list[str], key_vocab: list[str]
     return score
 
 
-def one_run(client, outputs: Path, keys: Path, video_id: str, label: str, n: int, rescore: bool) -> dict:
+def one_run(client, outputs: Path, keys: Path, video_id: str, label: str, n: int, rescore: bool,
+            notes_dir: Path | None = None, extras: bool = True) -> dict:
     out_dir = outputs / video_id / "bench" / label / f"run{n}"
     out_dir.mkdir(parents=True, exist_ok=True)
     segments = json.loads((outputs / video_id / "transcript.json").read_text())
@@ -90,7 +91,10 @@ def one_run(client, outputs: Path, keys: Path, video_id: str, label: str, n: int
             cards = json.loads((out_dir / "cards.json").read_text())
             terms = json.loads((out_dir / "terms.json").read_text())
         else:
-            cards, terms, _ = build_cards(client, video_id, transcript_text, out_dir)
+            note = ""
+            if notes_dir:  # the website's "Your notes" box, filled with Spencer's notes
+                note = prompts.learner_notes((notes_dir / f"{video_id}.md").read_text(), extras)
+            cards, terms, _ = build_cards(client, video_id, transcript_text, out_dir, note=note)
             terms = [t.model_dump() for t in terms]
         key_path = keys / f"{video_id}.md"
         score = score_run(client, transcript_text, read_key(key_path), read_key_vocab(key_path), cards, terms)
@@ -137,12 +141,15 @@ def main() -> None:
     parser.add_argument("--outputs", type=Path, default=ROOT / "outputs")
     parser.add_argument("--keys", type=Path, default=ROOT / "answer-keys")
     parser.add_argument("--rescore", action="store_true", help="re-score saved decks without new runs")
+    parser.add_argument("--notes", type=Path, help="folder of <video_id>.md notes to paste in, as on the website")
+    parser.add_argument("--notes-only", action="store_true", help="with --notes: no ideas beyond the notes")
     args = parser.parse_args()
 
     client = llm.make_client()
     jobs = [(v, n) for v in args.videos for n in range(1, args.runs + 1)]
     with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
-        results = list(pool.map(lambda job: one_run(client, args.outputs, args.keys, job[0], args.label, job[1], args.rescore), jobs))
+        results = list(pool.map(lambda job: one_run(client, args.outputs, args.keys, job[0], args.label, job[1], args.rescore,
+                                         args.notes, not args.notes_only), jobs))
 
     report = summary(results, args.label)
     (args.outputs / f"bench_{args.label}.md").write_text(report)

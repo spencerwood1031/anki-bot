@@ -11,7 +11,7 @@ from typing import Literal
 
 import anthropic
 from anthropic.lib._parse._transform import transform_schema
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, Field, TypeAdapter
 
 from ankibot import prompts
 from ankibot.deck import no_end_period
@@ -53,10 +53,15 @@ class TermList(BaseModel):
     terms: list[Term]
 
 
+NOT_IN_NOTES = Field(default=False, description="true only for an idea the learner's notes don't contain, added on top of "
+                                  "them; false for everything else, including when there are no notes")
+
+
 class Idea(BaseModel):
     idea: str            # the idea stated in one sentence
     why_it_matters: str  # one sentence on why it's worth remembering
     start_seconds: int   # where in the video it's explained
+    not_in_notes: bool = NOT_IN_NOTES  # the website shows these under their own heading
 
 
 class IdeaList(BaseModel):
@@ -68,6 +73,7 @@ class Card(BaseModel):
     front: str           # basic: the question. cloze: text with {{c1::...}}
     back: str            # basic: the answer. cloze: always empty
     start_seconds: int   # timestamp the source link will point to
+    not_in_notes: bool = NOT_IN_NOTES
 
 
 class CardList(BaseModel):
@@ -149,12 +155,15 @@ def _ask(client: anthropic.Anthropic, system: str, user: str, output_shape: type
     return response.parsed_output
 
 
-def extract_terms(client: anthropic.Anthropic, transcript_text: str) -> TermList:
+# Each pipeline step takes an optional `note`: text added to the end of its
+# prompt, such as the learner's own notes (prompts.learner_notes).
+
+def extract_terms(client: anthropic.Anthropic, transcript_text: str, note: str = "") -> TermList:
     """The lecture's technical terms.
     Now and then Claude gives up and returns almost nothing, so we check the
     answer and ask once more before giving up."""
     for attempt in range(2):
-        result = _ask(client, prompts.terms_system(), prompts.terms_user(transcript_text), TermList)
+        result = _ask(client, prompts.terms_system(), prompts.terms_user(transcript_text) + note, TermList)
         if not terms_look_blank(result.terms):
             return result
     raise RuntimeError(gave_up_message("a proper list of technical terms", result.problem))
@@ -174,17 +183,18 @@ def terms_look_blank(terms: list[Term]) -> bool:
     return len(terms) < 3 or any(not t.term.strip() or not t.definition.strip() for t in terms)
 
 
-def pick_ideas(client: anthropic.Anthropic, transcript_text: str, terms: list[Term]) -> list[Idea]:
+def pick_ideas(client: anthropic.Anthropic, transcript_text: str, terms: list[Term], note: str = "") -> list[Idea]:
     result = _ask(
         client,
         prompts.ideas_system(),
-        prompts.ideas_user(transcript_text, terms),
+        prompts.ideas_user(transcript_text, terms) + note,
         IdeaList,
     )
     return result.ideas
 
 
-def draft_cards(client: anthropic.Anthropic, transcript_text: str, ideas: list[Idea], terms: list[Term]) -> list[Card]:
+def draft_cards(client: anthropic.Anthropic, transcript_text: str, ideas: list[Idea], terms: list[Term],
+                note: str = "") -> list[Card]:
     """The main-idea cards. (Vocab cards are built from the terms in code: see vocab_cards.)
 
     Now and then Claude answers with one blank card instead of a real list,
@@ -194,7 +204,7 @@ def draft_cards(client: anthropic.Anthropic, transcript_text: str, ideas: list[I
         result = _ask(
             client,
             prompts.cards_system(),
-            prompts.cards_user(transcript_text, ideas, terms),
+            prompts.cards_user(transcript_text, ideas, terms) + note,
             CardList,
         )
         if not cards_look_blank(result.cards, len(ideas)):
@@ -202,10 +212,11 @@ def draft_cards(client: anthropic.Anthropic, transcript_text: str, ideas: list[I
     raise RuntimeError(gave_up_message("real cards", result.problem))
 
 
-def review_deck(client: anthropic.Anthropic, transcript_text: str, terms: list[Term], cards: list[Card]) -> Review:
+def review_deck(client: anthropic.Anthropic, transcript_text: str, terms: list[Term], cards: list[Card],
+                note: str = "") -> Review:
     """The critic pass: Claude checks the draft against the card rules and
     returns fixed terms and cards. If the answer looks broken, keep the draft."""
-    review = _ask(client, prompts.critic_system(), prompts.critic_user(transcript_text, terms, cards), Review)
+    review = _ask(client, prompts.critic_system(), prompts.critic_user(transcript_text, terms, cards) + note, Review)
     if review_looks_broken(review, terms, cards):
         return Review(
             terms=[ReviewedTerm(**t.model_dump(), note="") for t in terms],
@@ -275,8 +286,9 @@ def request_body(system: str, user: str, output_shape: type[BaseModel]) -> dict:
 def browser_request(step: str, data: dict) -> dict:
     """Build the request for one website step. `data` is what the page sent."""
     system, user, shape = _step_prompt(step, data)
-    # The visitor's optional "Additional context" box goes on every step.
+    # The visitor's optional "Additional context" and "Your notes" boxes go on every step.
     user += prompts.learner_context(data.get("context", ""))
+    user += prompts.learner_notes(data.get("notes", ""), data.get("notes_extras", True))
     return request_body(system, user, shape)
 
 

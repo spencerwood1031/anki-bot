@@ -61,24 +61,25 @@ def main(url: str, terms_only: bool = False) -> None:
     print(f"Done: {len(terms)} terms, {len(ideas)} ideas, {len(card_dicts)} cards.")
 
 
-def build_cards(client, video_id: str, transcript_text: str, out_dir: Path, terms=None):
+def build_cards(client, video_id: str, transcript_text: str, out_dir: Path, terms=None, note: str = ""):
     """Steps 3-5: key ideas, card drafts and the rules check. Saves each step's
     output in out_dir and returns (card dicts, checked terms, ideas).
-    evals/bench.py calls this too, so a benchmark run is exactly a real run."""
+    evals/bench.py calls this too, so a benchmark run is exactly a real run.
+    note: text added to every prompt, such as prompts.learner_notes(...)."""
     if terms is None:
-        terms = llm.extract_terms(client, transcript_text).terms
+        terms = llm.extract_terms(client, transcript_text, note).terms
         save_json(out_dir / "draft_terms.json", [t.model_dump() for t in terms])
 
     print("3/5 Picking the key ideas...")
-    ideas = llm.pick_ideas(client, transcript_text, terms)
+    ideas = llm.pick_ideas(client, transcript_text, terms, note)
     save_json(out_dir / "ideas.json", [i.model_dump() for i in ideas])
 
     print("4/5 Drafting cards...")
-    cards = llm.draft_cards(client, transcript_text, ideas, terms)
+    cards = llm.draft_cards(client, transcript_text, ideas, terms, note)
     save_json(out_dir / "draft_cards.json", [c.model_dump() for c in cards])
 
     print("5/5 Checking the draft against the card rules...")
-    review = llm.review_deck(client, transcript_text, terms, cards)
+    review = llm.review_deck(client, transcript_text, terms, cards, note)
     save_json(out_dir / "review.json", review.model_dump())
     for item in [*review.terms, *review.cards]:
         if item.note:
