@@ -9,7 +9,9 @@ nobody later changes the server or page in a way that breaks that.
 import unittest
 from pathlib import Path
 
-from app import PAGE, app, page_script_hash
+import re
+
+from app import KATEX_SCRIPT, PAGE, app, page_script_hash
 
 ROOT = Path(__file__).parent.parent
 
@@ -28,7 +30,9 @@ class KeyPrivacyTest(unittest.TestCase):
         self.assertEqual(page.count('"x-api-key": apiKey'), 1)
         self.assertNotIn("localStorage", page)
         self.assertNotIn("sessionStorage", page)
-        self.assertNotIn("<script src", page)  # no outside scripts that could read it
+        # No outside scripts that could read it. The one script file is our own
+        # copy of KaTeX (it draws math), served by us, never another site.
+        self.assertEqual(re.findall(r'<script src="([^"]*)"', page), [KATEX_SCRIPT])
 
     def test_browser_may_only_connect_to_us_and_anthropic(self):
         response = app.test_client().get("/")
@@ -41,10 +45,12 @@ class KeyPrivacyTest(unittest.TestCase):
         response = app.test_client().get("/")
         policy = response.headers["Content-Security-Policy"]
         script_rule = [rule for rule in policy.split("; ") if rule.startswith("script-src")][0]
-        self.assertEqual(script_rule, "script-src " + page_script_hash())
+        # Plus exactly one file on our own server: our copy of KaTeX.
+        self.assertEqual(script_rule, f"script-src {page_script_hash()} localhost{KATEX_SCRIPT}")
         self.assertNotIn("unsafe", script_rule)
         page = PAGE.read_text()
-        self.assertEqual(page.count("<script"), 1)  # the fingerprint covers one block
+        self.assertEqual(page.count("<script>"), 1)  # the fingerprint covers one inline block
+        self.assertEqual(page.count("<script"), 2)  # and the KaTeX file
         self.assertNotIn("innerHTML", page)  # card text is shown as text, never as HTML
 
     def test_page_refuses_to_send_a_key_to_our_server(self):

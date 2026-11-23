@@ -59,7 +59,7 @@ since a student may not know them. Skip everyday words and names of people.
 These are the rules for vocab and definitions. Follow every one of them, and
 study their examples:
 
-{rules([12, 13, 14, 16, 21])}
+{rules([12, 13, 14, 16, 21, 22])}
 
 Definition examples:
 {definition_examples()}
@@ -363,7 +363,7 @@ def vocab_grade_system() -> str:
 becomes two cards (term -> definition and definition -> term). Judge each term
 against these rules:
 
-{rules([11, 12, 13, 14, 16, 21])}
+{rules([11, 12, 13, 14, 16, 21, 22])}
 
 Check the transcript for each term: is it explained or used in the lecture's
 reasoning, or only mentioned in passing? Is it a near-duplicate of another

@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,500;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+  <!-- KaTeX draws LaTeX math on the cards. Our own copy, served from this site. -->
+  <link rel="stylesheet" href="/static/katex/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG">
   <style>
     /* The look of spencerjwood.com: cream paper, red, black, Libre Franklin,
        small spaced-out capitals for labels, 2px red rules, square buttons. */
@@ -178,6 +180,9 @@
     .suggestion { margin-top: 4px; padding: 4px 0 4px 16px; border-left: 2px solid var(--soft); font-size: 15px; }
     .suggestion .why { font-style: italic; color: var(--ink); margin-bottom: 10px; }
     .suggestion .s-card { margin-bottom: 10px; }
+    /* How a box with math will look in Anki, shown under the box. */
+    .math-preview { color: var(--ink); font-size: 17px; margin: -6px 0 12px; overflow-x: auto; }
+    .katex { font-size: 1.1em; }
     .suggestion b { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
     .row { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 4px; }
     .card .error-note { color: var(--red); font-size: 13px; }
@@ -241,7 +246,7 @@
           <ul>
             <li><b>Your key never reaches this website's server.</b> Your browser sends it straight to Anthropic (api.anthropic.com), the company that makes Claude, and nowhere else.</li>
             <li><b>Your key isn't saved.</b> The page only holds it while this tab is open, so closing or reloading the tab erases it.</li>
-            <li><b>The browser enforces this.</b> The page's security rules block it from sending data anywhere except this site and Anthropic, and from running any code but its own.</li>
+            <li><b>The browser enforces this.</b> The page's security rules block it from sending data anywhere except this site and Anthropic. They also stop it from running any code except its own and KaTeX, a widely used open-source library that draws the math on cards. This site keeps its own copy of KaTeX rather than loading it from somewhere else.</li>
             <li><b>You can check.</b> Open your browser's developer tools (Network tab) while making a deck: the key appears only in requests to api.anthropic.com.</li>
           </ul>
           <p>If you want to be extra safe, make a new key just for this site, set a spending limit in the Anthropic console, and delete the key when you're done.</p>
@@ -317,6 +322,7 @@
 </main>
 </div>
 
+<script src="/static/katex/katex.min.js" integrity="sha384-a1WQdjRj162i159OYq041X6I4K8NenkrI09LlPmiHg0YOb7CR+wJOraXwK9abpnE"></script>
 <script>
   // ---------------------------------------------------------------
   // Everything the page knows lives in `deck`. The server keeps
@@ -645,14 +651,55 @@
 
   // A card's front as readable nodes: the sentence with its hidden parts highlighted.
   function readableFront(card) {
-    if (card.card_type !== "cloze") return [card.front];
+    if (card.card_type !== "cloze") return withMath(card.front);
     const { sentence, hiddens } = clozeParts(card.front);
     const nodes = [];
     sentence.split(BLANK).forEach((text, i) => {
-      if (i > 0) nodes.push(el("span", { className: "blank", textContent: hiddens[i - 1] }));
-      nodes.push(text);
+      if (i > 0) nodes.push(el("span", { className: "blank" }, ...withMath(hiddens[i - 1])));
+      nodes.push(...withMath(text));
     });
     return nodes;
+  }
+
+  // ---------------- Math ----------------
+  // Cards write math in LaTeX between \( and \) (or \[ and \] for a line of
+  // its own), the way Anki shows it: "\(a_n\)" becomes a with a small n below.
+  // The boxes keep the LaTeX so it can be edited; a preview under a box shows
+  // how the math will look. KaTeX (static/katex/) does the drawing.
+
+  const MATH = /\\\((.+?)\\\)|\\\[(.+?)\\\]/gs;
+  const hasMath = (text) => /\\\(|\\\[/.test(text);
+
+  // Text as nodes: plain words stay plain text, each piece of math is drawn.
+  // If KaTeX didn't load, or the LaTeX has a typo, the math shows as typed.
+  function withMath(text) {
+    const nodes = [];
+    let last = 0;
+    for (const match of text.matchAll(MATH)) {
+      nodes.push(text.slice(last, match.index));
+      const span = el("span");
+      try {
+        katex.render(match[1] ?? match[2], span, { displayMode: match[2] !== undefined });
+      } catch {
+        span.textContent = match[0];
+      }
+      nodes.push(span);
+      last = match.index + match[0].length;
+    }
+    nodes.push(text.slice(last));
+    return nodes;
+  }
+
+  // The preview under a box. update() redraws it; it hides when there's no math.
+  function mathPreview(getText) {
+    const preview = el("div", { className: "math-preview" });
+    const update = () => {
+      const text = getText();
+      preview.hidden = !hasMath(text);
+      preview.replaceChildren(...(preview.hidden ? [] : withMath(text)));
+    };
+    update();
+    return { preview, update };
   }
 
   // The edit boxes for one card (also used by the "Add your own card" form).
@@ -661,19 +708,25 @@
 
     if (card.card_type !== "cloze") {
       const front = el("textarea", { rows: 2, value: card.front, placeholder: "e.g. What does a neuron in a neural network hold?" });
-      front.oninput = () => { card.front = front.value; };
+      const frontMath = mathPreview(() => card.front);
+      front.oninput = () => { card.front = front.value; frontMath.update(); };
       const back = el("textarea", { rows: 2, value: card.back, placeholder: "e.g. A number between 0 and 1" });
-      back.oninput = () => { card.back = back.value; };
-      return [...box("Question", front), ...box("Answer", back)];
+      const backMath = mathPreview(() => card.back);
+      back.oninput = () => { card.back = back.value; backMath.update(); };
+      return [...box("Question", front), frontMath.preview, ...box("Answer", back), backMath.preview];
     }
 
     if (card.sentence === undefined) Object.assign(card, clozeParts(card.front));
     if (!card.hiddens.length) card.hiddens = [""];
     const problem = el("p", { className: "problem" });
     const hiddenBoxes = el("div");
+    // The finished card with its blanks filled in and highlighted, when it has math.
+    const preview = el("div", { className: "math-preview" });
 
     const update = () => {
       card.front = clozeFront(card.sentence, card.hiddens);
+      preview.hidden = !card.front || !hasMath(card.front);
+      preview.replaceChildren(...(preview.hidden ? [] : readableFront(card)));
       const blanks = card.sentence.split(BLANK).length - 1;
       problem.textContent = blanks > 1 && blanks !== card.hiddens.length
         ? `The sentence has ${blanks} blanks; fill in a hidden part for each.`
@@ -703,7 +756,7 @@
     update();
     return [
       ...box("Sentence (___ marks each blank)", sentence),
-      hiddenBoxes, problem,
+      hiddenBoxes, problem, preview,
     ];
   }
 
@@ -805,8 +858,8 @@
         ? el("p", { className: "s-card" },
             el("b", { textContent: "Fill in the blank: " }), ...readableFront(c))
         : el("p", { className: "s-card" },
-            el("b", { textContent: "Question: " }), c.front, el("br"),
-            el("b", { textContent: "Answer: " }), c.back || "(empty)"))),
+            el("b", { textContent: "Question: " }), ...withMath(c.front), el("br"),
+            el("b", { textContent: "Answer: " }), ...(c.back ? withMath(c.back) : ["(empty)"])))),
       el("div", { className: "row" }, ...(unchanged ? [] : [useButton]), keepButton));
   }
 
