@@ -53,13 +53,16 @@ only return the terms and their definitions.
 
 List every technical word the lecture uses: named concepts, techniques,
 components, notation, acronyms and jargon. Include general technical words the
-lecture uses without explaining them (e.g. GPU, zip file, compile, binary),
+lecture uses without explaining them (e.g. enzyme, catalyst, protein),
 since a student may not know them. Skip everyday words and names of people.
 
 These are the rules for vocab and definitions. Follow every one of them, and
 study their examples:
 
 {rules([12, 13, 14, 16, 21, 22])}
+
+If the lecture is built around a formula, list each of its symbols' names that
+is a technical term (resistance, current) as a term too.
 
 Definition examples:
 {definition_examples()}
@@ -160,7 +163,7 @@ between concepts. The goal is long-term memory of the subject itself.
 These are the rules the main-idea cards must follow. Choose the ideas so that
 one card per idea will satisfy every one of them:
 
-{rules([9, 10, 18, 20])}
+{rules([9, 10, 18, 20, 23])}
 
 So before you answer, check your list:
 - Each idea must be clearly different from every other. If two ideas would
@@ -212,7 +215,8 @@ the list itself, so don't write them. You write:
 1. Main-idea cards: exactly one card per key idea, walking through the
    lecture's main line of reasoning. Never split an idea into several cards:
    if it won't fit one short answer, ask about its most important part and
-   drop the rest.
+   drop the rest. The one exception is a key formula: it gets the cards of
+   rule 23.
 2. Leftover cards (rule 15): if a term's short definition leaves out something
    important that no main-idea card covers, one question card for it. Never for
    trivia, and never for something a main-idea card already asks.
@@ -276,6 +280,9 @@ Work through the draft one rule at a time, then look across the whole deck:
   no card covers yet, add one conceptual question for it (rule 12). When you
   trim something important from a definition (rule 14) that no card covers
   yet, add one leftover question card for it (rule 15); never for trivia.
+- Only add a term when a main-idea card's answer is a technical term with no
+  vocab cards yet (a symbol card answering "the resistance"): add it with
+  its definition (rule 11).
 
 Leave everything that already follows the rules exactly as it is: don't
 reword good cards. Keep each item's start_seconds and not_in_notes unless you add a new card.

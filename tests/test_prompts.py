@@ -65,3 +65,9 @@ def test_cards_carry_not_in_notes():
     assert "not_in_notes" in str(schema)
     card = llm.Card(card_type="basic", front="Q", back="A", start_seconds=0, not_in_notes=True)
     assert "(not in notes)" in llm.prompts.critic_user("", [], [card])
+
+
+def test_math_braces_never_end_a_blank_early():
+    from ankibot.deck import space_math_braces
+    assert space_math_braces(r"{{c1::\(\frac{a}{b^{2}}\)}}") == r"{{c1::\(\frac{a}{b^{2} }\)}}"
+    assert space_math_braces("no math here}}") == "no math here}}"

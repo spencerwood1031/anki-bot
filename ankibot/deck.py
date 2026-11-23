@@ -59,6 +59,18 @@ def no_end_period(text: str) -> str:
     return text
 
 
+def space_math_braces(text: str) -> str:
+    """Anki ends a fill-in-the-blank at the first "}}", so LaTeX like
+    \\(\\frac{a}{b^{2}}\\) inside a blank would cut it short. Inside math, "} }"
+    means the same to LaTeX, so put a space between closing braces."""
+    def fix(match: re.Match) -> str:
+        math = match.group(0)
+        while "}}" in math:
+            math = math.replace("}}", "} }")
+        return math
+    return re.sub(r"\\\(.*?\\\)", fix, text, flags=re.DOTALL)
+
+
 def build_deck(deck_key: str, title: str, cards: list[dict], path: str) -> None:
     """Write cards (dicts with card_type, front, back, source_url) to an .apkg.
     deck_key is the video id (or page link): the same key gives the same deck,
@@ -70,6 +82,7 @@ def build_deck(deck_key: str, title: str, cards: list[dict], path: str) -> None:
         # Anki fields are HTML, so card text is escaped: a "<" in "\(x < y\)"
         # must reach Anki as text, not as the start of an HTML tag.
         front, back = html.escape(card["front"], quote=False), html.escape(card.get("back", ""), quote=False)
+        front, back = space_math_braces(front), space_math_braces(back)
         source = f'<a href="{card["source_url"]}">Watch this part</a>' if card.get("source_url") else ""
         # A hidden Anki tag says which kind of card it is, so it can be filtered in Anki.
         tags = ["vocab"] if card.get("kind") == "vocab" else ["main-idea"]
