@@ -363,7 +363,7 @@ def vocab_grade_system() -> str:
 becomes two cards (term -> definition and definition -> term). Judge each term
 against these rules:
 
-{rules([11, 12, 13, 14, 16, 21])}
+{rules([11, 12, 13, 14, 16, 21, 22])}
 
 Check the transcript for each term: is it explained or used in the lecture's
 reasoning, or only mentioned in passing? Is it a near-duplicate of another
