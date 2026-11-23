@@ -61,6 +61,9 @@ study their examples:
 
 {rules([12, 13, 14, 16, 21, 22])}
 
+If the lecture is built around a formula, list each of its symbols' names that
+is a technical term (resistance, current) as a term too.
+
 Definition examples:
 {definition_examples()}
 
@@ -277,6 +280,9 @@ Work through the draft one rule at a time, then look across the whole deck:
   no card covers yet, add one conceptual question for it (rule 12). When you
   trim something important from a definition (rule 14) that no card covers
   yet, add one leftover question card for it (rule 15); never for trivia.
+- Only add a term when a main-idea card's answer is a technical term with no
+  vocab cards yet (a symbol card answering "the resistance"): add it with
+  its definition (rule 11).
 
 Leave everything that already follows the rules exactly as it is: don't
 reword good cards. Keep each item's start_seconds and not_in_notes unless you add a new card.
