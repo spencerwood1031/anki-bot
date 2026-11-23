@@ -42,3 +42,19 @@ Compares the main-idea cards in `outputs/<video_id>/cards.json` with `golden/<vi
   card with reasons, printed and saved to `outputs/<video_id>/eval_cards.json`.
 
 Runs vary, so compare averages of a few runs before trusting a change.
+
+## bench.py
+```bash
+python evals/bench.py wjZofJX0v4M WUvTyaaNkzM --runs 3 --label baseline
+python evals/bench.py wjZofJX0v4M --label baseline --rescore   # re-score saved decks, no new runs
+```
+Runs the full pipeline (same code as `make_deck.py`) several times on saved transcripts
+(`outputs/<video_id>/transcript.json`, no YouTube fetch) and scores each deck:
+
+- Notes covered = points in `answer-keys/<video_id>.md` (distilled from Spencer's notes) that some card teaches
+- Vocab kept = terms that break none of the vocab rules (11-14, 16, 21)
+- Ideas clean = main-idea cards that break none of the card rules
+
+The averages, plus each run's missed points, weak terms and rule-breaking cards, are
+printed and saved to `outputs/bench_<label>.md`. Use it to check a prompt change on
+every test video before trusting it.

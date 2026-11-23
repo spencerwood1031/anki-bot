@@ -328,3 +328,15 @@ def grade_cards(client: anthropic.Anthropic, tool_cards: list[dict]) -> list[Gra
     """Ask Claude which card rules each tool card breaks."""
     result = _ask(client, prompts.grade_system(), prompts.grade_user(tool_cards), GradeList)
     return result.grades
+
+
+def grade_vocab(client: anthropic.Anthropic, transcript_text: str, terms: list[dict]) -> list[Grade]:
+    """Ask Claude which vocab rules each term (with its definition) breaks."""
+    result = _ask(client, prompts.vocab_grade_system(), prompts.vocab_grade_user(transcript_text, terms), GradeList)
+    return result.grades
+
+
+def cover_notes(client: anthropic.Anthropic, points: list[str], tool_cards: list[dict]) -> list[Coverage]:
+    """For each point in Spencer's notes, ask Claude which tool cards teach it."""
+    result = _ask(client, prompts.NOTES_COVER_SYSTEM, prompts.cover_user(points, tool_cards), CoverageList)
+    return result.coverage
