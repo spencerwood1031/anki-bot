@@ -567,7 +567,7 @@
       stage = `Checking the cards against the rules (${steps} of ${steps})`;
       const review = await reviewDeck({ transcript_text, terms: draftTerms, cards: draftCards });
       const { terms, cut } = review;
-      const cards = wantIdeas ? review.cards.map((c) => ({ ...c, kind: "idea" })) : [];
+      const cards = wantIdeas ? review.cards.map((c) => noEndPeriod({ ...c, kind: "idea" })) : [];
       // Two vocab cards per term, built by our server from the terms list.
       const vocab = wantVocab
         ? (await (await postJson("/api/vocab-cards", { terms })).json()).cards.map((c) => ({ ...c, kind: "vocab" }))
@@ -722,6 +722,14 @@
     card.card_type = newType;
   }
 
+  // Answers never end with a full stop (same rule as deck.no_end_period on the server).
+  function noEndPeriod(card) {
+    const back = (card.back || "").trim();
+    const drop = card.card_type === "basic" && back.endsWith(".") && !back.endsWith("..")
+      && !/\b[A-Za-z]\.[A-Za-z]\.$/.test(back);
+    return drop ? { ...card, back: back.slice(0, -1) } : card;
+  }
+
   function renderCards() {
     const list = $("card-list");
     // A heading above the vocab cards and above the main-idea cards.
@@ -783,7 +791,7 @@
       textContent: s.cards.length > 1 ? `Use these ${s.cards.length} new cards` : "Use new" });
     useButton.onclick = () => {
       // Replace the card with the suggestion (it may split into several cards).
-      const replacements = s.cards.map((c) => ({ ...c, start_seconds: card.start_seconds, kind: card.kind }));
+      const replacements = s.cards.map((c) => noEndPeriod({ ...c, start_seconds: card.start_seconds, kind: card.kind }));
       deck.cards.splice(index, 1, ...replacements);
       renderCards();
     };
