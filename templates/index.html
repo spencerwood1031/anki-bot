@@ -246,7 +246,7 @@
           <ul>
             <li><b>Your key never reaches this website's server.</b> Your browser sends it straight to Anthropic (api.anthropic.com), the company that makes Claude, and nowhere else.</li>
             <li><b>Your key isn't saved.</b> The page only holds it while this tab is open, so closing or reloading the tab erases it.</li>
-            <li><b>The browser enforces this.</b> The page's security rules block it from sending data anywhere except this site and Anthropic. They also stop it from running any code except its own and KaTeX, a widely used open-source library that draws the math on cards. This site keeps its own copy of KaTeX rather than loading it from somewhere else.</li>
+            <li><b>The browser enforces this.</b> The page's security rules block it from sending data anywhere except this site and Anthropic. They also stop it from running any code except the site's own and a few widely used open-source libraries. The site keeps its own fixed copy of each library instead of loading it from another website.</li>
             <li><b>You can check.</b> Open your browser's developer tools (Network tab) while making a deck: the key appears only in requests to api.anthropic.com.</li>
           </ul>
           <p>If you want to be extra safe, make a new key just for this site, set a spending limit in the Anthropic console, and delete the key when you're done.</p>
