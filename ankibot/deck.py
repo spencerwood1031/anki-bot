@@ -1,5 +1,6 @@
 """Step 3: turn cards into an Anki .apkg file with genanki."""
 
+import re
 import zlib
 
 import genanki
@@ -43,6 +44,16 @@ CLOZE_MODEL = genanki.Model(
 )
 
 
+def no_end_period(text: str) -> str:
+    """Answers never end with a full stop (Spencer's style). Keeps an ellipsis
+    ("...") and abbreviations like "U.S." intact; math like "$x.$" ends in "$",
+    so it's untouched."""
+    text = text.strip()
+    if text.endswith(".") and not text.endswith("..") and not re.search(r"\b[A-Za-z]\.[A-Za-z]\.$", text):
+        return text[:-1]
+    return text
+
+
 def build_deck(deck_key: str, title: str, cards: list[dict], path: str) -> None:
     """Write cards (dicts with card_type, front, back, source_url) to an .apkg.
     deck_key is the video id (or page link): the same key gives the same deck,
@@ -58,7 +69,7 @@ def build_deck(deck_key: str, title: str, cards: list[dict], path: str) -> None:
             # No extra context on fill-in-the-blank cards.
             note = genanki.Note(model=CLOZE_MODEL, fields=[card["front"], "", source], tags=tags)
         else:
-            note = genanki.Note(model=BASIC_MODEL, fields=[card["front"], card["back"], source], tags=tags)
+            note = genanki.Note(model=BASIC_MODEL, fields=[card["front"], no_end_period(card["back"]), source], tags=tags)
         deck.add_note(note)
 
     genanki.Package(deck).write_to_file(path)
