@@ -4,7 +4,8 @@ services:
   - type: web
     name: anki-bot
     runtime: python
-    plan: free
+    # Starter: always on, so the first visit is not slow (the free plan sleeps).
+    plan: starter
     buildCommand: pip install -r requirements.txt
     # gunicorn is a production web server for Flask apps.
     # --timeout 600: a deck takes 1-3 minutes, far longer than the 30s default.
