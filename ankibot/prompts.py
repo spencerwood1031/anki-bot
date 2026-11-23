@@ -214,13 +214,18 @@ The draft has two parts:
 Work through the draft one rule at a time, then look across the whole deck:
 - Terms: cut any term the vocab rules exclude (11, 12, 16), such as a phrase
   the speaker coined, a word that only appears in one example, or a
-  near-duplicate. Rewrite any definition that breaks rules 13, 14 or 21, and
-  check against the transcript that it means what the lecture means by it.
+  near-duplicate. For each term, find it in the transcript: if the lecture
+  only mentions it in passing, without explaining it or using it in its
+  reasoning, cut it (rule 12). Rewrite any definition that breaks rules 13,
+  14 or 21, and check against the transcript that it means what the lecture
+  means by it.
 - Cards: rewrite any card that breaks a rule, and cut any card that is trivia,
   off the lecture's main line, or overlaps another card (rule 20; keep the
   single best one, preferring the one with the lecture's analogy).
-- Only add a card when you cut a coined-phrase term whose idea no card covers
-  yet: then add one conceptual question for it (rule 12).
+- Only add a card in two cases. When you cut a coined-phrase term whose idea
+  no card covers yet, add one conceptual question for it (rule 12). When you
+  trim something important from a definition (rule 14) that no card covers
+  yet, add one leftover question card for it (rule 15); never for trivia.
 
 Leave everything that already follows the rules exactly as it is: don't
 reword good cards. Keep each item's start_seconds unless you add a new card.
@@ -349,3 +354,44 @@ def grade_user(tool_cards) -> str:
 </cards>
 
 For every card, give its number and the rules it breaks (an empty list if it follows them all)."""
+
+
+# ---- Eval: would Spencer keep each vocab term? ----
+
+def vocab_grade_system() -> str:
+    return f"""You review the vocab list of an Anki deck made from a lecture. Each term
+becomes two cards (term -> definition and definition -> term). Judge each term
+against these rules:
+
+{rules([11, 12, 13, 14, 16, 21])}
+
+Check the transcript for each term: is it explained or used in the lecture's
+reasoning, or only mentioned in passing? Is it a near-duplicate of another
+term in the list? Does its definition say what the thing is or does?
+
+Be strict but fair: only flag a rule the term or its definition clearly breaks.
+For each broken rule give a short reason."""
+
+
+def vocab_grade_user(transcript_text: str, terms) -> str:
+    term_lines = "\n".join(f"V{n}. {t['term']}: {t['definition']}" for n, t in enumerate(terms, start=1))
+    return f"""<transcript>
+{transcript_text}
+</transcript>
+
+<terms>
+{term_lines}
+</terms>
+
+For every term, give its number and the rules it breaks (an empty list if it follows them all)."""
+
+
+# ---- Eval: which of Spencer's note points does a deck cover? ----
+
+NOTES_COVER_SYSTEM = """You check a flashcard deck against a student's notes on the same lecture.
+For each note point, list the deck's cards that teach it: a student who learned
+those cards would know the point's core claim. Several cards together can
+cover one point, and a vocab card covers a point that is just that term.
+Wording and format don't matter. Small details of the point (an example, a
+phrase like "even from far away") don't need their own card, but the core
+claim does: a card on a related but different fact doesn't count."""
