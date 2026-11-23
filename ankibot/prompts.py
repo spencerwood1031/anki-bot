@@ -53,7 +53,7 @@ only return the terms and their definitions.
 
 List every technical word the lecture uses: named concepts, techniques,
 components, notation, acronyms and jargon. Include general technical words the
-lecture uses without explaining them (e.g. GPU, zip file, compile, binary),
+lecture uses without explaining them (e.g. enzyme, catalyst, protein),
 since a student may not know them. Skip everyday words and names of people.
 
 These are the rules for vocab and definitions. Follow every one of them, and
