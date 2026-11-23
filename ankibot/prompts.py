@@ -59,7 +59,7 @@ since a student may not know them. Skip everyday words and names of people.
 These are the rules for vocab and definitions. Follow every one of them, and
 study their examples:
 
-{rules([12, 13, 14, 16, 21])}
+{rules([12, 13, 14, 16, 21, 22])}
 
 Definition examples:
 {definition_examples()}

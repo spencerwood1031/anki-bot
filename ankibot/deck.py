@@ -1,5 +1,10 @@
-"""Step 3: turn cards into an Anki .apkg file with genanki."""
+"""Step 3: turn cards into an Anki .apkg file with genanki.
 
+Math on cards is LaTeX between \\( and \\) (card rule 22). Anki draws it
+itself with its built-in MathJax, so no add-on is needed.
+"""
+
+import html
 import zlib
 
 import genanki
@@ -51,14 +56,17 @@ def build_deck(deck_key: str, title: str, cards: list[dict], path: str) -> None:
     deck = genanki.Deck(deck_id, title)
 
     for card in cards:
+        # Anki fields are HTML, so card text is escaped: a "<" in "\(x < y\)"
+        # must reach Anki as text, not as the start of an HTML tag.
+        front, back = html.escape(card["front"], quote=False), html.escape(card.get("back", ""), quote=False)
         source = f'<a href="{card["source_url"]}">Watch this part</a>' if card.get("source_url") else ""
         # A hidden Anki tag says which kind of card it is, so it can be filtered in Anki.
         tags = ["vocab"] if card.get("kind") == "vocab" else ["main-idea"]
         if card["card_type"] == "cloze":
             # No extra context on fill-in-the-blank cards.
-            note = genanki.Note(model=CLOZE_MODEL, fields=[card["front"], "", source], tags=tags)
+            note = genanki.Note(model=CLOZE_MODEL, fields=[front, "", source], tags=tags)
         else:
-            note = genanki.Note(model=BASIC_MODEL, fields=[card["front"], card["back"], source], tags=tags)
+            note = genanki.Note(model=BASIC_MODEL, fields=[front, back, source], tags=tags)
         deck.add_note(note)
 
     genanki.Package(deck).write_to_file(path)

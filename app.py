@@ -44,6 +44,9 @@ app = Flask(__name__)
 # would often give up with a blank placeholder.
 app.json.sort_keys = False
 PAGE = Path(__file__).parent / "templates" / "index.html"
+# KaTeX draws the LaTeX math on the review screen. Its files are a copy kept in
+# static/katex/ (version 0.19.1), served by us, never loaded from another site.
+KATEX_SCRIPT = "/static/katex/katex.min.js"
 
 # Long lectures cost the visitor more and can exceed what Claude reads in one go.
 # About 3 hours of speech is roughly this many characters.
@@ -64,7 +67,8 @@ def page_script_hash() -> str:
 def security_headers() -> dict:
     """Rules the browser enforces on our page, mostly to protect visitors' API keys.
 
-    - script-src: only our own page's script may run, nothing injected.
+    - script-src: only our own page's script may run, nothing injected, plus
+      our own copy of KaTeX (one exact file on this server) to draw math.
     - connect-src: the page may only send data to this server and to Claude's API,
       so even a bug couldn't send a visitor's key anywhere else.
     - Strict-Transport-Security: always use https, so nobody on the visitor's
@@ -73,9 +77,9 @@ def security_headers() -> dict:
     return {
         "Content-Security-Policy": (
             "default-src 'self'; "
-            f"script-src {page_script_hash()}; "
+            f"script-src {page_script_hash()} {request.host}{KATEX_SCRIPT}; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "  # Libre Franklin, as on spencerjwood.com
-            "font-src https://fonts.gstatic.com; "
+            "font-src 'self' https://fonts.gstatic.com; "  # 'self': KaTeX's math fonts
             "connect-src 'self' https://api.anthropic.com; "
             "img-src 'self' data: https://spencerjwood.com; "  # the favicon
             "base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'"
