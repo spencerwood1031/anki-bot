@@ -330,9 +330,11 @@ def grade_cards(client: anthropic.Anthropic, tool_cards: list[dict]) -> list[Gra
     return result.grades
 
 
-def grade_vocab(client: anthropic.Anthropic, transcript_text: str, terms: list[dict]) -> list[Grade]:
-    """Ask Claude which vocab rules each term (with its definition) breaks."""
-    result = _ask(client, prompts.vocab_grade_system(), prompts.vocab_grade_user(transcript_text, terms), GradeList)
+def grade_vocab(client: anthropic.Anthropic, transcript_text: str, terms: list[dict], wanted_terms=()) -> list[Grade]:
+    """Ask Claude which vocab rules each term (with its definition) breaks.
+    wanted_terms: terms from Spencer's notes, which are never cut as unwanted."""
+    user = prompts.vocab_grade_user(transcript_text, terms, wanted_terms)
+    result = _ask(client, prompts.vocab_grade_system(), user, GradeList)
     return result.grades
 
 

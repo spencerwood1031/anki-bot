@@ -34,6 +34,14 @@ from ankibot import llm, transcript  # noqa: E402
 from make_deck import build_cards  # noqa: E402
 
 
+def read_key_vocab(path: Path) -> list[str]:
+    """The answer key's '## Vocab' section: terms Spencer wrote in his notes."""
+    if not path.exists() or "## Vocab" not in path.read_text():
+        return []
+    section = path.read_text().split("## Vocab", 1)[1].split("\n## ", 1)[0]
+    return [line.strip() for line in section.splitlines() if line.strip() and not line.startswith("#")]
+
+
 def read_key(path: Path) -> list[str]:
     """Answer-key points: every non-empty line that isn't a # comment or heading."""
     if not path.exists():
@@ -42,7 +50,8 @@ def read_key(path: Path) -> list[str]:
             if line.strip() and not line.startswith("#")]
 
 
-def score_run(client, transcript_text: str, key: list[str], cards: list[dict], terms: list[dict]) -> dict:
+def score_run(client, transcript_text: str, key: list[str], key_vocab: list[str],
+              cards: list[dict], terms: list[dict]) -> dict:
     idea_cards = [c for c in cards if c["kind"] == "idea"]
     score = {"terms": len(terms), "idea_cards": len(idea_cards)}
 
@@ -52,7 +61,7 @@ def score_run(client, transcript_text: str, key: list[str], cards: list[dict], t
         score["notes_covered"] = len(covered) / len(key)
         score["missed_points"] = [p for n, p in enumerate(key, start=1) if n not in covered]
 
-    vocab = llm.grade_vocab(client, transcript_text, terms)
+    vocab = llm.grade_vocab(client, transcript_text, terms, key_vocab)
     bad_terms = {g.tool_number: g.breaks for g in vocab if g.breaks}
     score["vocab_kept"] = 1 - len(bad_terms) / max(len(terms), 1)
     score["bad_terms"] = [
@@ -83,7 +92,8 @@ def one_run(client, outputs: Path, keys: Path, video_id: str, label: str, n: int
         else:
             cards, terms, _ = build_cards(client, video_id, transcript_text, out_dir)
             terms = [t.model_dump() for t in terms]
-        score = score_run(client, transcript_text, read_key(keys / f"{video_id}.md"), cards, terms)
+        key_path = keys / f"{video_id}.md"
+        score = score_run(client, transcript_text, read_key(key_path), read_key_vocab(key_path), cards, terms)
     except Exception as error:  # one failed run shouldn't sink the others
         score = {"error": str(error)}
     (out_dir / "score.json").write_text(json.dumps(score, indent=2, ensure_ascii=False))

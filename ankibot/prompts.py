@@ -124,8 +124,14 @@ one card per idea will satisfy every one of them:
 So before you answer, check your list:
 - Each idea must be clearly different from every other. If two ideas would
   lead to cards with nearly the same answer, merge them into one.
+- Spend the ideas on the lecture's explanation of how its subject works,
+  step by step, including the basic properties that explanation relies on
+  (what a key operation's result tells you, how the input is represented,
+  what a piece of notation means). A student who knows the cards should be
+  able to retell that explanation.
 - Drop fine technical details and side points that the main line of reasoning
-  doesn't need.
+  doesn't need: asides about history, products, practical tricks or study
+  advice, unless the explanation builds on them.
 - Drop any idea whose honest answer would be vague ("it's useful in many
   problems").
 
@@ -216,7 +222,8 @@ Work through the draft one rule at a time, then look across the whole deck:
   the speaker coined, a word that only appears in one example, or a
   near-duplicate. For each term, find it in the transcript: if the lecture
   only mentions it in passing, without explaining it or using it in its
-  reasoning, cut it (rule 12). Rewrite any definition that breaks rules 13,
+  reasoning, cut it (rule 12), unless it is a word of the subject or era
+  that most people have never met: keep those. Rewrite any definition that breaks rules 13,
   14 or 21, and check against the transcript that it means what the lecture
   means by it.
 - Cards: rewrite any card that breaks a rule, and cut any card that is trivia,
@@ -365,19 +372,32 @@ against these rules:
 
 {rules([11, 12, 13, 14, 16, 21])}
 
-Check the transcript for each term: is it explained or used in the lecture's
-reasoning, or only mentioned in passing? Is it a near-duplicate of another
-term in the list? Does its definition say what the thing is or does?
+Go through every term and check, one at a time:
+- Passing mention (rule 12): find it in the transcript. Is it explained or used
+  in the lecture's reasoning, or only mentioned once in passing?
+- Near-duplicate (rule 16): compare it with every other term in the list. A
+  term that is a broader or narrower form of another (prompt vs system prompt,
+  matrix multiplication vs matrix-vector product, array vs tensor) is a
+  near-duplicate: flag the one the lecture leans on less.
+- Generic or everyday word (rule 12), or a product or model name.
+- Definition (rules 13, 14): does it say what the thing is or does, in one
+  clause with no tail that could be cut?
 
-Be strict but fair: only flag a rule the term or its definition clearly breaks.
+Be strict: these terms become cards a learner reviews for years, so flag any
+term a careful editor would cut.
 For each broken rule give a short reason."""
 
 
-def vocab_grade_user(transcript_text: str, terms) -> str:
+def vocab_grade_user(transcript_text: str, terms, wanted_terms=()) -> str:
     term_lines = "\n".join(f"V{n}. {t['term']}: {t['definition']}" for n, t in enumerate(terms, start=1))
+    wanted = ""
+    if wanted_terms:
+        wanted = ("\n\nThe learner's own notes list these terms, so they are wanted vocab: never flag\n"
+                  "them (or the same term in other words) for rules 12 or 16, only for their definitions.\n"
+                  + "\n".join(f"- {t}" for t in wanted_terms))
     return f"""<transcript>
 {transcript_text}
-</transcript>
+</transcript>{wanted}
 
 <terms>
 {term_lines}
