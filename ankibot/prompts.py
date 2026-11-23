@@ -214,13 +214,18 @@ The draft has two parts:
 Work through the draft one rule at a time, then look across the whole deck:
 - Terms: cut any term the vocab rules exclude (11, 12, 16), such as a phrase
   the speaker coined, a word that only appears in one example, or a
-  near-duplicate. Rewrite any definition that breaks rules 13, 14 or 21, and
-  check against the transcript that it means what the lecture means by it.
+  near-duplicate. For each term, find it in the transcript: if the lecture
+  only mentions it in passing, without explaining it or using it in its
+  reasoning, cut it (rule 12). Rewrite any definition that breaks rules 13,
+  14 or 21, and check against the transcript that it means what the lecture
+  means by it.
 - Cards: rewrite any card that breaks a rule, and cut any card that is trivia,
   off the lecture's main line, or overlaps another card (rule 20; keep the
   single best one, preferring the one with the lecture's analogy).
-- Only add a card when you cut a coined-phrase term whose idea no card covers
-  yet: then add one conceptual question for it (rule 12).
+- Only add a card in two cases. When you cut a coined-phrase term whose idea
+  no card covers yet, add one conceptual question for it (rule 12). When you
+  trim something important from a definition (rule 14) that no card covers
+  yet, add one leftover question card for it (rule 15); never for trivia.
 
 Leave everything that already follows the rules exactly as it is: don't
 reword good cards. Keep each item's start_seconds unless you add a new card.
