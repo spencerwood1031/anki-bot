@@ -264,6 +264,14 @@
       <textarea id="context" rows="2" maxlength="2000" placeholder="e.g. I'm a software engineer, so skip basics like GPU or compile.&#10;e.g. Studying for a history exam: I need the key dates and people."></textarea>
     </div>
 
+    <div class="field">
+      <label class="label" for="notes">Your notes</label>
+      <textarea id="notes" rows="2" maxlength="20000" placeholder="e.g. Paste the notes you took while watching, and the cards will follow them."></textarea>
+      <div class="choices" id="notes-choice" hidden>
+        <label><input type="checkbox" id="notes-extras" checked> Also add key ideas my notes missed</label>
+      </div>
+    </div>
+
     <fieldset class="field">
       <legend class="label">Cards to make</legend>
       <div class="choices">
@@ -330,7 +338,9 @@
   // ---------------------------------------------------------------
   // videoId: a YouTube video. sourceUrl: a page on another site (no timestamps). Both can be "".
   // context: the visitor's optional "Additional context" note, sent with every Claude step.
-  const deck = { videoId: "", sourceUrl: "", title: "", context: "", cards: [], hasTimestamps: true, retries: [] };
+  // notes / notesExtras: the optional "Your notes" box, which decides what gets cards.
+  const deck = { videoId: "", sourceUrl: "", title: "", context: "", notes: "", notesExtras: true,
+                 cards: [], hasTimestamps: true, retries: [] };
 
   // The visitor's API key. It stays in this variable (in memory, never in
   // browser storage) and is only ever sent to api.anthropic.com, never to
@@ -411,7 +421,7 @@
   // One Claude step: our server builds the request (prompts live in Python),
   // the browser adds the key and sends it to Claude, and we read back the JSON.
   async function askClaude(step, inputs) {
-    const body = await (await postJson("/api/claude-request", { step, context: deck.context, ...inputs })).json();
+    const body = await (await postJson("/api/claude-request", { step, context: deck.context, notes: deck.notes, notes_extras: deck.notesExtras, ...inputs })).json();
     const response = await fetchClaude("/v1/messages", { method: "POST", body: JSON.stringify(body) });
     if (!response.ok) throw await claudeError(response);
     const message = await response.json();
@@ -517,6 +527,8 @@
     setTimeout(() => warning.remove(), 8000);
   });
 
+  // The "add ideas my notes missed" choice only matters once there are notes.
+  $("notes").addEventListener("input", () => { $("notes-choice").hidden = !$("notes").value.trim(); });
   $("key-info-button").addEventListener("click", () => showKeyInfo($("key-info").hidden));
   document.addEventListener("click", (event) => {
     if (!event.target.closest("#key-info, #key-info-button")) showKeyInfo(false);
@@ -561,6 +573,8 @@
 
       deck.retries = [];
       deck.context = $("context").value.trim();
+      deck.notes = $("notes").value.trim();
+      deck.notesExtras = $("notes-extras").checked;
       stage = `Finding the technical terms (1 of ${steps})`;
       const { terms: draftTerms } = await askForTerms({ transcript_text });
       let draftCards = [];
@@ -573,7 +587,9 @@
       stage = `Checking the cards against the rules (${steps} of ${steps})`;
       const review = await reviewDeck({ transcript_text, terms: draftTerms, cards: draftCards });
       const { terms, cut } = review;
-      const cards = wantIdeas ? review.cards.map((c) => noEndPeriod({ ...c, kind: "idea" })) : [];
+      // Cards from the visitor's notes first, then any extra ideas their notes missed.
+      const ideaCards = wantIdeas ? review.cards.map((c) => noEndPeriod({ ...c, kind: c.not_in_notes ? "extra" : "idea" })) : [];
+      const cards = [...ideaCards.filter((c) => c.kind === "idea"), ...ideaCards.filter((c) => c.kind === "extra")];
       // Two vocab cards per term, built by our server from the terms list.
       const vocab = wantVocab
         ? (await (await postJson("/api/vocab-cards", { terms })).json()).cards.map((c) => ({ ...c, kind: "vocab" }))
@@ -785,12 +801,14 @@
 
   function renderCards() {
     const list = $("card-list");
-    // A heading above the vocab cards and above the main-idea cards.
-    const kindOf = (card) => (card.kind === "vocab" ? "vocab" : "idea");
+    // A heading above the vocab cards, the main-idea cards, and the extra
+    // ideas a visitor's notes missed.
+    const headings = { vocab: "Vocabulary", idea: "Main ideas", extra: "Not in your notes" };
+    const kindOf = (card) => (headings[card.kind] ? card.kind : "idea");
     const nodes = [];
     deck.cards.forEach((card, i) => {
       if (i === 0 || kindOf(deck.cards[i - 1]) !== kindOf(card)) {
-        nodes.push(el("h3", { className: "group", textContent: kindOf(card) === "vocab" ? "Vocabulary" : "Main ideas" }));
+        nodes.push(el("h3", { className: "group", textContent: headings[kindOf(card)] }));
       }
       nodes.push(renderCard(card, i));
     });
