@@ -181,8 +181,11 @@
     .suggestion { margin-top: 4px; padding: 4px 0 4px 16px; border-left: 2px solid var(--soft); font-size: 15px; }
     .suggestion .why { font-style: italic; color: var(--ink); margin-bottom: 10px; }
     .suggestion .s-card { margin-bottom: 10px; }
-    /* How a box with math will look in Anki, shown under the box. */
-    .math-preview { color: var(--ink); font-size: 17px; margin: -6px 0 12px; overflow-x: auto; }
+    /* A box with math shows the math drawn, the way Anki will show it, in the
+       box's place; clicking it opens the box to edit. */
+    .math-drawn { font-size: 16px; line-height: 1.5; padding: 8px 0; margin-bottom: 14px; border-bottom: 2px solid var(--ink); cursor: text; overflow-x: auto; }
+    .math-drawn .drawn-line { padding-top: 8px; }
+    .math-drawn:focus { outline: none; border-bottom-color: var(--red); }
     .katex { font-size: 1.1em; }
     .suggestion b { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
     .row { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 4px; }
@@ -681,8 +684,8 @@
   // ---------------- Math ----------------
   // Cards write math in LaTeX between \( and \) (or \[ and \] for a line of
   // its own), the way Anki shows it: "\(a_n\)" becomes a with a small n below.
-  // The boxes keep the LaTeX so it can be edited; a preview under a box shows
-  // how the math will look. KaTeX (static/katex/) does the drawing.
+  // A box with math shows it drawn instead of as LaTeX; clicking it opens the
+  // LaTeX for editing. KaTeX (static/katex/) does the drawing.
 
   const MATH = /\\\((.+?)\\\)|\\\[(.+?)\\\]/gs;
   const hasMath = (text) => /\\\(|\\\[/.test(text);
@@ -707,16 +710,28 @@
     return nodes;
   }
 
-  // The preview under a box. update() redraws it; it hides when there's no math.
-  function mathPreview(getText) {
-    const preview = el("div", { className: "math-preview" });
-    const update = () => {
-      const text = getText();
-      preview.hidden = !hasMath(text);
-      preview.replaceChildren(...(preview.hidden ? [] : withMath(text)));
+  // Shows the math drawn in place of the editor (a box, or a group of boxes)
+  // whenever the card has math. Clicking the drawn version (or Enter on it)
+  // opens the editor; when the cursor leaves the editor, the drawn version
+  // comes back. Cards without math just show the editor.
+  function drawnUntilClicked(editor, hasMathNow, draw) {
+    const drawn = el("div", { className: "math-drawn", tabIndex: 0, title: "Click to edit" });
+    const show = () => {
+      const useDrawn = hasMathNow();
+      drawn.hidden = !useDrawn;
+      editor.hidden = useDrawn;
+      drawn.replaceChildren(...(useDrawn ? draw() : []));
     };
-    update();
-    return { preview, update };
+    const edit = () => {
+      drawn.hidden = true;
+      editor.hidden = false;
+      (editor.matches("textarea, input") ? editor : editor.querySelector("textarea, input")).focus();
+    };
+    drawn.onclick = edit;
+    drawn.onkeydown = (event) => { if (event.key === "Enter") { event.preventDefault(); edit(); } };
+    editor.addEventListener("focusout", (event) => { if (!editor.contains(event.relatedTarget)) show(); });
+    show();
+    return drawn;
   }
 
   // The edit boxes for one card (also used by the "Add your own card" form).
@@ -725,25 +740,21 @@
 
     if (card.card_type !== "cloze") {
       const front = el("textarea", { rows: 2, value: card.front, placeholder: "e.g. What does a neuron in a neural network hold?" });
-      const frontMath = mathPreview(() => card.front);
-      front.oninput = () => { card.front = front.value; frontMath.update(); };
+      front.oninput = () => { card.front = front.value; };
       const back = el("textarea", { rows: 2, value: card.back, placeholder: "e.g. A number between 0 and 1" });
-      const backMath = mathPreview(() => card.back);
-      back.oninput = () => { card.back = back.value; backMath.update(); };
-      return [...box("Question", front), frontMath.preview, ...box("Answer", back), backMath.preview];
+      back.oninput = () => { card.back = back.value; };
+      const drawnFront = drawnUntilClicked(front, () => hasMath(card.front), () => withMath(card.front));
+      const drawnBack = drawnUntilClicked(back, () => hasMath(card.back), () => withMath(card.back));
+      return [...box("Question", front), drawnFront, ...box("Answer", back), drawnBack];
     }
 
     if (card.sentence === undefined) Object.assign(card, clozeParts(card.front));
     if (!card.hiddens.length) card.hiddens = [""];
     const problem = el("p", { className: "problem" });
     const hiddenBoxes = el("div");
-    // The finished card with its blanks filled in and highlighted, when it has math.
-    const preview = el("div", { className: "math-preview" });
 
     const update = () => {
       card.front = clozeFront(card.sentence, card.hiddens);
-      preview.hidden = !card.front || !hasMath(card.front);
-      preview.replaceChildren(...(preview.hidden ? [] : readableFront(card)));
       const blanks = card.sentence.split(BLANK).length - 1;
       problem.textContent = blanks > 1 && blanks !== card.hiddens.length
         ? `The sentence has ${blanks} blanks; fill in a hidden part for each.`
@@ -771,10 +782,11 @@
     };
     drawHiddenBoxes();
     update();
-    return [
-      ...box("Sentence (___ marks each blank)", sentence),
-      hiddenBoxes, problem, preview,
-    ];
+    // With math, the finished card shows drawn, its blanks highlighted, until clicked.
+    const editor = el("div", {}, ...box("Sentence (___ marks each blank)", sentence), hiddenBoxes, problem);
+    const drawn = drawnUntilClicked(editor, () => !!card.front && hasMath(card.front),
+      () => [el("span", { className: "field-label", textContent: "Card" }), el("div", { className: "drawn-line" }, ...readableFront(card))]);
+    return [drawn, editor];
   }
 
   // Switching type keeps the words: "Cost about ___." + "$2 million" <-> question + answer.
