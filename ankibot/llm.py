@@ -14,6 +14,7 @@ from anthropic.lib._parse._transform import transform_schema
 from pydantic import BaseModel, TypeAdapter
 
 from ankibot import prompts
+from ankibot.deck import no_end_period
 
 # One place to change the model for every call.
 MODEL = "claude-opus-5-5"
@@ -244,7 +245,7 @@ def vocab_cards(terms: list[Term]) -> list[dict]:
     cards = []
     for t in terms:
         # No full stop: the definition is also the front of the second card.
-        definition = t.definition.strip().rstrip(".")
+        definition = no_end_period(t.definition)
         for front, back in [(t.term, definition), (definition, t.term)]:
             cards.append({"kind": "vocab", "card_type": "basic", "front": front,
                           "back": back, "start_seconds": t.start_seconds})

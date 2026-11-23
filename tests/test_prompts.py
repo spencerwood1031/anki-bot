@@ -33,3 +33,12 @@ def test_additional_context_reaches_every_step_only_when_given():
         assert "I'm a nurse" in llm.browser_request(step, data)["messages"][0]["content"]
     data["context"] = "  "
     assert "learner_context" not in llm.browser_request("terms", data)["messages"][0]["content"]
+
+
+def test_answers_never_end_with_a_period():
+    from ankibot.deck import no_end_period
+    assert no_end_period("Its training details and data.") == "Its training details and data"
+    assert no_end_period("Lord Raglan") == "Lord Raglan"
+    assert no_end_period("It trails off...") == "It trails off..."
+    assert no_end_period("The U.S.") == "The U.S."
+    assert no_end_period("$x = 1.$") == "$x = 1.$"
