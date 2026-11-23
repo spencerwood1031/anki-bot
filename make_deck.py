@@ -53,6 +53,22 @@ def main(url: str, terms_only: bool = False) -> None:
         print(f"Done: {len(terms)} terms. Score them with: python evals/eval_terms.py {video_id}")
         return
 
+    card_dicts, terms, ideas = build_cards(client, video_id, transcript_text, out_dir, terms)
+
+    apkg_path = out_dir / "deck.apkg"
+    deck.build_deck(video_id, f"Lecture {video_id}", card_dicts, str(apkg_path))
+    print(f"  saved {apkg_path}")
+    print(f"Done: {len(terms)} terms, {len(ideas)} ideas, {len(card_dicts)} cards.")
+
+
+def build_cards(client, video_id: str, transcript_text: str, out_dir: Path, terms=None):
+    """Steps 3-5: key ideas, card drafts and the rules check. Saves each step's
+    output in out_dir and returns (card dicts, checked terms, ideas).
+    evals/bench.py calls this too, so a benchmark run is exactly a real run."""
+    if terms is None:
+        terms = llm.extract_terms(client, transcript_text).terms
+        save_json(out_dir / "draft_terms.json", [t.model_dump() for t in terms])
+
     print("3/5 Picking the key ideas...")
     ideas = llm.pick_ideas(client, transcript_text, terms)
     save_json(out_dir / "ideas.json", [i.model_dump() for i in ideas])
@@ -78,11 +94,7 @@ def main(url: str, terms_only: bool = False) -> None:
     for card_dict in card_dicts:
         card_dict["source_url"] = timestamp_url(video_id, card_dict["start_seconds"])
     save_json(out_dir / "cards.json", card_dicts)
-
-    apkg_path = out_dir / "deck.apkg"
-    deck.build_deck(video_id, f"Lecture {video_id}", card_dicts, str(apkg_path))
-    print(f"  saved {apkg_path}")
-    print(f"Done: {len(terms)} terms, {len(ideas)} ideas, {len(card_dicts)} cards.")
+    return card_dicts, terms, ideas
 
 
 if __name__ == "__main__":

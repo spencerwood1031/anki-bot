@@ -354,3 +354,44 @@ def grade_user(tool_cards) -> str:
 </cards>
 
 For every card, give its number and the rules it breaks (an empty list if it follows them all)."""
+
+
+# ---- Eval: would Spencer keep each vocab term? ----
+
+def vocab_grade_system() -> str:
+    return f"""You review the vocab list of an Anki deck made from a lecture. Each term
+becomes two cards (term -> definition and definition -> term). Judge each term
+against these rules:
+
+{rules([11, 12, 13, 14, 16, 21])}
+
+Check the transcript for each term: is it explained or used in the lecture's
+reasoning, or only mentioned in passing? Is it a near-duplicate of another
+term in the list? Does its definition say what the thing is or does?
+
+Be strict but fair: only flag a rule the term or its definition clearly breaks.
+For each broken rule give a short reason."""
+
+
+def vocab_grade_user(transcript_text: str, terms) -> str:
+    term_lines = "\n".join(f"V{n}. {t['term']}: {t['definition']}" for n, t in enumerate(terms, start=1))
+    return f"""<transcript>
+{transcript_text}
+</transcript>
+
+<terms>
+{term_lines}
+</terms>
+
+For every term, give its number and the rules it breaks (an empty list if it follows them all)."""
+
+
+# ---- Eval: which of Spencer's note points does a deck cover? ----
+
+NOTES_COVER_SYSTEM = """You check a flashcard deck against a student's notes on the same lecture.
+For each note point, list the deck's cards that teach it: a student who learned
+those cards would know the point's core claim. Several cards together can
+cover one point, and a vocab card covers a point that is just that term.
+Wording and format don't matter. Small details of the point (an example, a
+phrase like "even from far away") don't need their own card, but the core
+claim does: a card on a related but different fact doesn't count."""
