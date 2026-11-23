@@ -39,7 +39,7 @@ flask --app app run --debug      # then open http://127.0.0.1:5000
 3. **Your domain**: in Render, open the anki-bot service → **Settings → Custom Domains → Add** `anki.spencerjwood.com`. Render shows an address like `anki-bot.onrender.com`.
 4. **Cloudflare**: open spencerjwood.com → **DNS → Records → Add record**. Type `CNAME`, name `anki`, target the Render address, proxy status **DNS only** (grey cloud). Back in Render, click **Verify**. HTTPS is set up for you within a few minutes.
 
-The free plan sleeps after 15 idle minutes, so the first visit after that takes about a minute.
+The site runs on the Starter plan, which stays awake. (The free plan sleeps after 15 idle minutes, so the first visit after that takes about a minute.)
 
 ## Layout
 - `make_deck.py`: runs the pipeline top to bottom
